@@ -1,0 +1,170 @@
+# This file is not intended to be manually modified! If you want to manually edit this file anyway, ensure that the server is not running currently and that you have prepared a backup of this file.
+
+data-version: 4|2|4903
+'1':
+  uniqueId: 2fde05c4-674e-4e2d-aece-a1565030f5ca
+  world: world
+  x: -167
+  y: 107
+  z: 74
+  yaw: -90.16171
+  type: admin
+  open: true
+  name: ''
+  object:
+    type: citizen
+    npcId: da919e0a-fe94-4d77-b225-e176f91c2783
+  recipes: {}
+  snapshots: []
+'2':
+  uniqueId: 6b033e52-2f57-4ca1-b795-efdc4d3419f2
+  world: world
+  x: -233
+  y: 108
+  z: 67
+  yaw: 0.0
+  type: admin
+  open: true
+  name: Kucharz
+  object:
+    type: allay
+    equipment:
+      HAND:
+        DataVersion: 4903
+        id: minecraft:cooked_beef
+        count: 1
+  recipes: {}
+  snapshots: []
+'9':
+  uniqueId: 83256ceb-b6ed-4b45-b3f4-7d5f1851689d
+  world: world
+  x: -195
+  y: 107
+  z: 65
+  yaw: 26.157711
+  type: admin
+  open: true
+  name: Cpun
+  object:
+    type: citizen
+    npcId: 46866140-2a2e-47a4-87d4-6cca5a3c09b9
+  recipes:
+    '1':
+      resultItem:
+        DataVersion: 4903
+        id: minecraft:ghast_tear
+        count: 1
+        components:
+          minecraft:lore: '[{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"Banknot",underlined:0b}],text:""}]'
+          minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:attribute_modifiers"]}'
+          minecraft:enchantments: '{"minecraft:aqua_affinity":1}'
+          minecraft:custom_name: '{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"20zl",underlined:0b}],text:""}'
+          minecraft:custom_model_data: '{floats:[2.0f]}'
+      item1:
+        DataVersion: 4903
+        id: minecraft:honeycomb
+        count: 1
+        components:
+          minecraft:custom_name: '{bold:1b,color:"light_purple",italic:0b,obfuscated:0b,strikethrough:0b,text:"Marihuana",underlined:0b}'
+          minecraft:custom_model_data: '{floats:[1.0f]}'
+  snapshots: []
+'10':
+  uniqueId: bef51236-e5e5-42aa-8cca-6ac75d262769
+  world: world
+  x: -149
+  y: 107
+  z: 130
+  yaw: 0.6359329
+  type: admin
+  open: true
+  name: ''
+  object:
+    type: citizen
+    npcId: d0619807-0a8a-4be7-ba63-7570ae096e47
+  recipes:
+    '1':
+      resultItem:
+        DataVersion: 4903
+        id: minecraft:ghast_tear
+        count: 1
+        components:
+          minecraft:lore: '[{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"Banknot",underlined:0b}],text:""}]'
+          minecraft:custom_name: '{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"20zl",underlined:0b}],text:""}'
+          minecraft:enchantments: '{"minecraft:aqua_affinity":1}'
+          minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:attribute_modifiers"]}'
+          minecraft:custom_model_data: '{floats:[2.0f]}'
+      item1:
+        DataVersion: 4903
+        id: minecraft:honeycomb
+        count: 2
+        components:
+          minecraft:custom_name: '{bold:1b,color:"light_purple",italic:0b,obfuscated:0b,strikethrough:0b,text:"Marihuana",underlined:0b}'
+          minecraft:custom_model_data: '{floats:[1.0f]}'
+  snapshots: []
+'11':
+  uniqueId: 736eb939-7ad9-4ddb-b5dc-4de2029f4745
+  world: world
+  x: -44
+  y: 131
+  z: 307
+  yaw: 268.8496
+  type: admin
+  open: true
+  name: ''
+  object:
+    type: citizen
+    npcId: 6bb17771-4d1f-4d9a-a321-1e875ce70452
+  recipes:
+    '1':
+      resultItem:
+        DataVersion: 4903
+        id: minecraft:ghast_tear
+        count: 1
+        components:
+          minecraft:lore: '[{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"Banknot",underlined:0b}],text:""}]'
+          minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:attribute_modifiers"]}'
+          minecraft:enchantments: '{"minecraft:aqua_affinity":1}'
+          minecraft:custom_name: '{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"50zl",underlined:0b}],text:""}'
+          minecraft:custom_model_data: '{floats:[3.0f]}'
+      item1:
+        DataVersion: 4903
+        id: minecraft:honeycomb
+        count: 2
+        components:
+          minecraft:custom_name: '{bold:1b,color:"light_purple",italic:0b,obfuscated:0b,strikethrough:0b,text:"Marihuana",underlined:0b}'
+          minecraft:custom_model_data: '{floats:[1.0f]}'
+  snapshots: []
+'12':
+  uniqueId: 7d92c761-0587-4e2e-baca-da9be30b4d69
+  world: world
+  x: 20
+  y: 117
+  z: 277
+  yaw: 142.05603
+  type: admin
+  open: true
+  name: Mafioza
+  object:
+    type: citizen
+    npcId: 325fba75-42ed-45e0-a85e-38d6fa48920d
+  recipes:
+    '1':
+      resultItem:
+        DataVersion: 4903
+        id: minecraft:wheat_seeds
+        count: 4
+        components:
+          minecraft:custom_name: '{bold:1b,color:"green",italic:0b,obfuscated:0b,strikethrough:0b,text:"Nasiono
+            Marihuany",underlined:0b}'
+          minecraft:custom_model_data: '{floats:[1.0f]}'
+      item1:
+        DataVersion: 4903
+        id: minecraft:ghast_tear
+        count: 1
+        components:
+          minecraft:lore: '[{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"Banknot",underlined:0b}],text:""}]'
+          minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:attribute_modifiers"]}'
+          minecraft:enchantments: '{"minecraft:aqua_affinity":1}'
+          minecraft:custom_name: '{extra:[{bold:1b,color:"white",italic:0b,obfuscated:0b,strikethrough:0b,text:"500zl",underlined:0b}],text:""}'
+          minecraft:custom_model_data: '{floats:[6.0f]}'
+  snapshots: []

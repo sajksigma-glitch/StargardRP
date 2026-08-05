@@ -1,0 +1,176 @@
+# ==========================================
+# Skrypt: System Powalenia, Bandaży i Medyków
+# ==========================================
+
+# --- Zarządzanie Medykami ---
+command /medyk [<text>] [<player>]:
+    permission: medyk.admin
+    permission message: &cNie masz uprawnień do zarządzania medykami!
+    trigger:
+        if arg-1 is "dodaj" or "add":
+            if arg-2 is set:
+                set {medyk::%uuid of arg-2%} to true
+                send "&aDodano gracza &e%arg-2% &ado grupy medyków!" to player
+                send "&aZostałeś dodany do grupy medyków!" to arg-2
+            else:
+                send "&cPodaj nick gracza!" to player
+
+        else if arg-1 is "usun" or "remove":
+            if arg-2 is set:
+                delete {medyk::%uuid of arg-2%}
+                send "&cUsunięto gracza &e%arg-2% &zz grupy medyków!" to player
+                send "&cZostałeś usunięty z grupy medyków." to arg-2
+            else:
+                send "&cPodaj nick gracza!" to player
+
+        else if arg-1 is "lista":
+            send "&e--- Lista Medyków ---" to player
+            loop all players:
+                if {medyk::%uuid of loop-player%} is true:
+                    send "&7- &a%loop-player%" to player
+
+        else:
+            send "&cUżycie: /medyk [dodaj/usun/lista] [gracz]" to player
+
+# --- Komenda na bandaż dla medyka ---
+command /med:
+    trigger:
+        if {medyk::%uuid of player%} is true:
+            set {_item} to paper named "&c&lBandaż"
+            set custom model data of {_item} to 1
+            give {_item} to player
+            send "&aOtrzymałeś &c&lBandaż&a!" to player
+        else:
+            send "&cNie jesteś medykiem!" to player
+
+# --- Komenda leczenia (Dostępna tylko dla OP) ---
+command /heall [<player>]:
+    permission: op
+    permission message: &cNie masz uprawnień do użycia tej komendy!
+    trigger:
+        if arg-1 is set:
+            if {downed::%arg-1%} is true:
+                delete {downed::%arg-1%}
+                delete {bleeding_out::%arg-1%}
+                remove slowness from arg-1
+                remove blindness from arg-1
+                remove jump boost from arg-1
+                remove nausea from arg-1
+                heal arg-1
+                send "&aWyleczyłeś i uratowałeś gracza &e%arg-1%&a!" to player
+                send "&aZostałeś wyleczony przez &e%player%&a!" to arg-1
+            else:
+                heal arg-1
+                send "&aWyleczyłeś gracza &e%arg-1%&a!" to player
+                send "&aZostałeś wyleczony przez &e%player%&a!" to arg-1
+        else:
+            send "&cPodaj nick gracza! Użycie: /heall <gracz>" to player
+
+# --- Ochrona przed obrażeniami, ruchem i niszczeniem ---
+on damage:
+    if {downed::%victim%} is true:
+        if {bleeding_out::%victim%} is not set:
+            cancel event
+    if {downed::%attacker%} is true:
+        cancel event
+
+# Blokada komend DLA ZWYKŁYCH GRACZY (Operatorzy mogą używać komend)
+on command:
+    if {downed::%player%} is true:
+        if player is not op:
+            cancel event
+            send "&cNie możesz używać komend, gdy jesteś powalony!" to player
+
+on break:
+    if {downed::%player%} is true:
+        cancel event
+        send "&cNie możesz niszczyć bloków, gdy jesteś powalony!" to player
+
+# --- Główna mechanika powalenia ---
+on damage of player:
+    if victim's health <= damage:
+        if {downed::%victim%} is not set:
+            if {bleeding_out::%victim%} is not set:
+                cancel event
+                set {downed::%victim%} to true
+                set victim's health to 1
+                
+                # Efekty powalenia (Jump Boost 200 blokuje skakanie bez wyrzucania w górę)
+                apply slowness 255 to victim for 120 seconds
+                apply blindness to victim for 120 seconds
+                apply jump boost 200 to victim for 120 seconds
+                apply nausea 1 to victim for 120 seconds
+                
+                send "&cZostałeś powalony! Masz 2 minuty na ratunek!" to victim
+                
+                # Pobieranie pozycji gracza
+                set {_loc} to location of victim
+                set {_x} to round(x-coord of {_loc})
+                set {_y} to round(y-coord of {_loc})
+                set {_z} to round(z-coord of {_loc})
+                set {_world} to world of {_loc}
+                
+                # POWIADOMIENIE DLA MEDYKÓW
+                loop all players:
+                    if {medyk::%uuid of loop-player%} is true:
+                        send "&c&lAlarm medyczny! Ktoś się wykrwawia!" to loop-player
+                        send "               &e[X: %{_x}%, Y: %{_y}%, Z: %{_z}% (%{_world}%)]" to loop-player
+                
+                # Odliczanie 120 sekund
+                set {_timer} to 120
+                while {_timer} > 0:
+                    if {downed::%victim%} is not set:
+                        stop # Przerwij pętlę, jeśli ktoś go podniósł/uleczył komendą
+                    
+                    send action bar "&cWykrwawiasz się! Pozostało: &e%{_timer}%&cs" to victim
+                    wait 1 second
+                    subtract 1 from {_timer}
+                
+                # Jeśli czas minął (GWARANTOWANA ŚMIERĆ):
+                if {downed::%victim%} is true:
+                    set {bleeding_out::%victim%} to true
+                    delete {downed::%victim%}
+                    
+                    # Czyszczenie efektów
+                    remove slowness from victim
+                    remove blindness from victim
+                    remove jump boost from victim
+                    remove nausea from victim
+                    
+                    send "&cWykrwawiłeś się na śmierć!" to victim
+                    kill victim
+
+# Czyszczenie zmiennych i efektów przy odrodzeniu
+on respawn:
+    delete {downed::%player%}
+    delete {bleeding_out::%player%}
+    remove slowness from player
+    remove blindness from player
+    remove jump boost from player
+    remove nausea from player
+
+# --- Użycie bandaża na powalonym graczu ---
+on rightclick on player:
+    if name of player's tool is "&c&lBandaż":
+        if {downed::%clicked player%} is true:
+            remove 1 of player's tool from player's inventory
+            
+            # Reset stanu powalenia
+            delete {downed::%clicked player%}
+            delete {bleeding_out::%clicked player%}
+            remove slowness from clicked player
+            remove blindness from clicked player
+            remove jump boost from clicked player
+            remove nausea from clicked player
+            
+            # Ustawienie zdrowia na 1 serce (2 HP)
+            set clicked player's health to 1
+            
+            # SPRAWDZENIE CZY RATUJĄCY TO MEDYK
+            if {medyk::%uuid of player%} is true:
+                execute console command "eco give %player% 85"
+                send "&aOżywiono gracza &e%clicked player%&a! Otrzymujesz &e$85&a za uratowanie życia!" to player
+            else:
+                send "&aOżywiono gracza &e%clicked player%&a!" to player
+                
+            send "&aGracz &e%player% &aratuje Ci życie!" to clicked player

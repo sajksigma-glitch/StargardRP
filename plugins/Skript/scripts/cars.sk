@@ -1,0 +1,79 @@
+# =========================================================
+# POJAZD: Naprawiony Ruch (Auto nie lata)
+# Wymagane pluginy: Skript, SkBee
+# =========================================================
+
+command /dajauto:
+    permission: admin.pojazd
+    trigger:
+        give player 1 stick named "&e&lSpawn Auto" with lore "&7Kliknij PPM na ziemię, aby zespawnować."
+        give player 1 gold nugget named "&e&lKluczyki" with lore "&7Trzymaj w ręce, aby jechać."
+        send "&aOtrzymałeś auto i kluczyki!" to player
+
+# ---------------------------------------------------------
+# SPAWNOWANIE POJAZDU
+# ---------------------------------------------------------
+on right click:
+    if name of player's tool contains "Spawn Auto":
+        cancel event
+        
+        if event-block is set:
+            set {_loc} to location 1 block above event-block
+        else:
+            set {_loc} to location of player
+        
+        spawn 1 armor stand at {_loc}
+        set {_car} to last spawned entity
+        
+        # Niewidzialność i mały rozmiar z NBT
+        add "{Invisible:1b,Small:1b}" to nbt of {_car}
+        add "custom_car" to scoreboard tags of {_car}
+        
+        # Nałożenie modelu
+        set helmet of {_car} to diamond hoe with custom model data 1
+        
+        send "&aAuto zespawnowane! Kliknij PPM, aby wsiąść. Trzymaj &eKluczyki&a, aby jechać." to player
+
+# ---------------------------------------------------------
+# WSIADANIE DO POJAZDU
+# ---------------------------------------------------------
+on right click on armor stand:
+    if event-entity has scoreboard tag "custom_car":
+        cancel event
+        make player ride event-entity
+
+# ---------------------------------------------------------
+# SYSTEM JAZDY (Poprawione latanie)
+# ---------------------------------------------------------
+every 1 tick:
+    loop all players:
+        if vehicle of loop-player is armor stand:
+            set {_car} to vehicle of loop-player
+            if {_car} has scoreboard tag "custom_car":
+                
+                # Jeśli gracz trzyma Kluczyki
+                if name of loop-player's tool contains "Kluczyki":
+                    
+                    # Pobieramy pozycję STOJAKU (dzięki temu auto nie leci w górę)
+                    set {_loc} to location of {_car}
+                    
+                    # Pobieramy obrót myszki gracza (tylko poziom prawo/lewo)
+                    set yaw of {_loc} to yaw of loop-player
+                    set pitch of {_loc} to 0
+                    
+                    # Przesuwamy auto do przodu na tym samym poziomie Y
+                    set {_target} to location 0.25 blocks in front of {_loc}
+                    
+                    # Teleportujemy auto
+                    teleport {_car} to {_target}
+
+# ---------------------------------------------------------
+# USUWANIE POJAZDU (Shift + Uderzenie)
+# ---------------------------------------------------------
+on damage of armor stand:
+    if victim has scoreboard tag "custom_car":
+        cancel event
+        if attacker is a player:
+            if attacker is sneaking:
+                kill victim
+                send "&cZniszczyłeś pojazd." to attacker

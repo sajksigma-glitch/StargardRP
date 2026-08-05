@@ -1,0 +1,294 @@
+# =========================================================================
+# SYSTEM BANKOMATÓW DLA SKCRIPT 2.6.2 (FIX LINIJEK 39 i 49)
+# =========================================================================
+
+options:
+    p: &6&lBANKOMAT &8»&r
+    no-permission: &cTa komenda jest tylko dla administracji!
+
+# -------------------------------------------------------------------------
+# KOMENDY ADMINISTRACYJNE (Wymagają OP lub uprawnienia bankomat.admin)
+# -------------------------------------------------------------------------
+
+command /bankomat [<text>] [<integer>]:
+    permission: bankomat.admin
+    permission message: {@no-permission}
+    trigger:
+        if arg 1 is not set:
+            send " " to player
+            send "{@p} &eMenu zarządzania bankomatami:" to player
+            send " &7/bankomat ustaw &8- &7Ustawia blok na który patrzysz jako bankomat." to player
+            send " &7/bankomat usun &8- &7Usuwa bankomat, na który patrzysz." to player
+            send " &7/bankomat ustawitem [10/20/50/100/200/500] &8- &7Przypisuje przedmiot z ręki." to player
+            send " " to player
+            stop
+            
+        if arg 1 is "ustaw":
+            set {_b} to target block of player
+            if {_b} is air:
+                send "{@p} &cMusisz patrzeć na blok!" to player
+                stop
+            set {_loc} to location of {_b}
+            if {bankomaty::list::*} contains {_loc}:
+                send "{@p} &cTen blok jest już bankomatem!" to player
+                stop
+            add {_loc} to {bankomaty::list::*}
+            send "{@p} &aPomyślnie utworzono bankomat z tego bloku!" to player
+            stop
+            
+        # POPRAWKA LINII 39: Zamiana "lub" na "or" w celu pełnej kompatybilności
+        if arg 1 is "usun" or "usuń":
+            set {_b} to target block of player
+            set {_loc} to location of {_b}
+            if {bankomaty::list::*} doesn't contain {_loc}:
+                send "{@p} &cTen blok nie jest bankomatem." to player
+                stop
+            remove {_loc} from {bankomaty::list::*}
+            send "{@p} &aPomyślnie usunięto bankomat." to player
+            stop
+
+        # POPRAWKA LINII 49: Zamiana "lub" na "or" w celu pełnej kompatybilności
+        if arg 1 is "ustawprzedmiot" or "ustawitem":
+            if arg 2 is not 10 or 20 or 50 or 100 or 200 or 500:
+                send "{@p} &cPoprawne kwoty to: 10, 20, 50, 100, 200, 500." to player
+                stop
+            if player's tool is air:
+                send "{@p} &cMusisz trzymać przedmiot w ręce, aby go przypisać!" to player
+                stop
+            
+            set {bankomat::item::%arg 2%} to player's tool
+            send "{@p} &aPomyślnie przypisano ten przedmiot do kwoty &e%arg 2%&a!" to player
+            stop
+
+# -------------------------------------------------------------------------
+# KLIKNIĘCIE W BLOK BANKOMATU & OTWIERANIE OKNA GUI
+# -------------------------------------------------------------------------
+
+on right click:
+    if {bankomaty::list::*} contains location of clicked block:
+        cancel event
+        
+        open chest inventory with 5 rows named "&0&lBANKOMAT" to player
+        
+        # Wypełnienie tła czarnymi szybami
+        set {_s} to 0
+        loop 45 times:
+            set slot {_s} of player's current inventory to black stained glass pane named " "
+            add 1 to {_s}
+            
+        # Wyświetlanie stanu konta z Vault
+        set {_bal} to player's balance
+        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%{_bal}%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+        
+        # --- RZĄD WYPŁAT (Sloty 11, 12, 13, 14, 15, 16) ---
+        if {bankomat::item::10} is set:
+            set slot 11 of player's current inventory to {bankomat::item::10} with lore "&7Kliknij, aby &cWYPŁACIĆ &a10$"
+        else:
+            set slot 11 of player's current inventory to red wool named "&cBrak przedmiotu (10$)" with lore "&7Admin musi najpierw ustawić przedmiot."
+
+        if {bankomat::item::20} is set:
+            set slot 12 of player's current inventory to {bankomat::item::20} with lore "&7Kliknij, aby &cWYPŁACIĆ &a20$"
+        else:
+            set slot 12 of player's current inventory to red wool named "&cBrak przedmiotu (20$)" with lore "&7Admin musi najpierw ustawić przedmiot."
+
+        if {bankomat::item::50} is set:
+            set slot 13 of player's current inventory to {bankomat::item::50} with lore "&7Kliknij, aby &cWYPŁACIĆ &a50$"
+        else:
+            set slot 13 of player's current inventory to red wool named "&cBrak przedmiotu (50$)" with lore "&7Admin musi najpierw ustawić przedmiot."
+
+        if {bankomat::item::100} is set:
+            set slot 14 of player's current inventory to {bankomat::item::100} with lore "&7Kliknij, aby &cWYPŁACIĆ &a100$"
+        else:
+            set slot 14 of player's current inventory to red wool named "&cBrak przedmiotu (100$)" with lore "&7Admin musi najpierw ustawić przedmiot."
+
+        if {bankomat::item::200} is set:
+            set slot 15 of player's current inventory to {bankomat::item::200} with lore "&7Kliknij, aby &cWYPŁACIĆ &a200$"
+        else:
+            set slot 15 of player's current inventory to red wool named "&cBrak przedmiotu (200$)" with lore "&7Admin musi najpierw ustawić przedmiot."
+
+        if {bankomat::item::500} is set:
+            set slot 16 of player's current inventory to {bankomat::item::500} with lore "&7Kliknij, aby &cWYPŁACIĆ &a500$"
+        else:
+            set slot 16 of player's current inventory to red wool named "&cBrak przedmiotu (500$)" with lore "&7Admin musi najpierw ustawić przedmiot."
+
+        # --- RZĄD WPŁAT (Sloty 29, 30, 31, 32, 33, 34) ---
+        if {bankomat::item::10} is set:
+            set slot 29 of player's current inventory to hopper named "&a&lWPŁAĆ 10$" with lore "&7Kliknij, aby wpłacić ten przedmiot z EQ."
+        else:
+            set slot 29 of player's current inventory to red wool named "&cBlokada (10$)"
+            
+        if {bankomat::item::20} is set:
+            set slot 30 of player's current inventory to hopper named "&a&lWPŁAĆ 20$" with lore "&7Kliknij, aby wpłacić ten przedmiot z EQ."
+        else:
+            set slot 30 of player's current inventory to red wool named "&cBlokada (20$)"
+            
+        if {bankomat::item::50} is set:
+            set slot 31 of player's current inventory to hopper named "&a&lWPŁAĆ 50$" with lore "&7Kliknij, aby wpłacić ten przedmiot z EQ."
+        else:
+            set slot 31 of player's current inventory to red wool named "&cBlokada (50$)"
+            
+        if {bankomat::item::100} is set:
+            set slot 32 of player's current inventory to hopper named "&a&lWPŁAĆ 100$" with lore "&7Kliknij, aby wpłacić ten przedmiot z EQ."
+        else:
+            set slot 32 of player's current inventory to red wool named "&cBlokada (100$)"
+            
+        if {bankomat::item::200} is set:
+            set slot 33 of player's current inventory to hopper named "&a&lWPŁAĆ 200$" with lore "&7Kliknij, aby wpłacić ten przedmiot z EQ."
+        else:
+            set slot 33 of player's current inventory to red wool named "&cBlokada (200$)"
+            
+        if {bankomat::item::500} is set:
+            set slot 34 of player's current inventory to hopper named "&a&lWPŁAĆ 500$" with lore "&7Kliknij, aby wpłacić ten przedmiot z EQ."
+        else:
+            set slot 34 of player's current inventory to red wool named "&cBlokada (500$)"
+
+# -------------------------------------------------------------------------
+# OBSŁUGA KLIKNIĘĆ W OKNIE
+# -------------------------------------------------------------------------
+
+on inventory click:
+    if name of player's current inventory is "&0&lBANKOMAT":
+        cancel event
+        
+        if clicked inventory is player's inventory:
+            stop
+
+        # --- WYPŁATY ---
+        if clicked slot is 11:
+            if {bankomat::item::10} is set:
+                if player's balance >= 10:
+                    if player has enough space for 1 of {bankomat::item::10}:
+                        remove 10 from player's balance
+                        give 1 of {bankomat::item::10} to player
+                        send "{@p} &aWypłacono 10$!" to player
+                        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                    else:
+                        send "{@p} &cNie masz miejsca w ekwipunku!" to player
+                else:
+                    send "{@p} &cMasz za mało pieniędzy!" to player
+        
+        if clicked slot is 12:
+            if {bankomat::item::20} is set:
+                if player's balance >= 20:
+                    if player has enough space for 1 of {bankomat::item::20}:
+                        remove 20 from player's balance
+                        give 1 of {bankomat::item::20} to player
+                        send "{@p} &aWypłacono 20$!" to player
+                        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                    else:
+                        send "{@p} &cNie masz miejsca w ekwipunku!" to player
+                else:
+                    send "{@p} &cMasz za mało pieniędzy!" to player
+
+        if clicked slot is 13:
+            if {bankomat::item::50} is set:
+                if player's balance >= 50:
+                    if player has enough space for 1 of {bankomat::item::50}:
+                        remove 50 from player's balance
+                        give 1 of {bankomat::item::50} to player
+                        send "{@p} &aWypłacono 50$!" to player
+                        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                    else:
+                        send "{@p} &cNie masz miejsca w ekwipunku!" to player
+                else:
+                    send "{@p} &cMasz za mało pieniędzy!" to player
+
+        if clicked slot is 14:
+            if {bankomat::item::100} is set:
+                if player's balance >= 100:
+                    if player has enough space for 1 of {bankomat::item::100}:
+                        remove 100 from player's balance
+                        give 1 of {bankomat::item::100} to player
+                        send "{@p} &aWypłacono 100$!" to player
+                        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                    else:
+                        send "{@p} &cNie masz miejsca w ekwipunku!" to player
+                else:
+                    send "{@p} &cMasz za mało pieniędzy!" to player
+
+        if clicked slot is 15:
+            if {bankomat::item::200} is set:
+                if player's balance >= 200:
+                    if player has enough space for 1 of {bankomat::item::200}:
+                        remove 200 from player's balance
+                        give 1 of {bankomat::item::200} to player
+                        send "{@p} &aWypłacono 200$!" to player
+                        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                    else:
+                        send "{@p} &cNie masz miejsca w ekwipunku!" to player
+                else:
+                    send "{@p} &cMasz za mało pieniędzy!" to player
+
+        if clicked slot is 16:
+            if {bankomat::item::500} is set:
+                if player's balance >= 500:
+                    if player has enough space for 1 of {bankomat::item::500}:
+                        remove 500 from player's balance
+                        give 1 of {bankomat::item::500} to player
+                        send "{@p} &aWypłacono 500$!" to player
+                        set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                    else:
+                        send "{@p} &cNie masz miejsca w ekwipunku!" to player
+                else:
+                    send "{@p} &cMasz za mało pieniędzy!" to player
+
+        # --- WPŁATY ---
+        if clicked slot is 29:
+            if {bankomat::item::10} is set:
+                if player's inventory contains 1 of {bankomat::item::10}:
+                    remove 1 of {bankomat::item::10} from player's inventory
+                    add 10 to player's balance
+                    send "{@p} &aWpłacono 10$ na konto!" to player
+                    set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                else:
+                    send "{@p} &cNie masz tego przedmiotu przy sobie!" to player
+
+        if clicked slot is 30:
+            if {bankomat::item::20} is set:
+                if player's inventory contains 1 of {bankomat::item::20}:
+                    remove 1 of {bankomat::item::20} from player's inventory
+                    add 20 to player's balance
+                    send "{@p} &aWpłacono 20$ na konto!" to player
+                    set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                else:
+                    send "{@p} &cNie masz tego przedmiotu przy sobie!" to player
+
+        if clicked slot is 31:
+            if {bankomat::item::50} is set:
+                if player's inventory contains 1 of {bankomat::item::50}:
+                    remove 1 of {bankomat::item::50} from player's inventory
+                    add 50 to player's balance
+                    send "{@p} &aWpłacono 50$ na konto!" to player
+                    set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                else:
+                    send "{@p} &cNie masz tego przedmiotu przy sobie!" to player
+
+        if clicked slot is 32:
+            if {bankomat::item::100} is set:
+                if player's inventory contains 1 of {bankomat::item::100}:
+                    remove 1 of {bankomat::item::100} from player's inventory
+                    add 100 to player's balance
+                    send "{@p} &aWpłacono 100$ na konto!" to player
+                    set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                else:
+                    send "{@p} &cNie masz tego przedmiotu przy sobie!" to player
+
+        if clicked slot is 33:
+            if {bankomat::item::200} is set:
+                if player's inventory contains 1 of {bankomat::item::200}:
+                    remove 1 of {bankomat::item::200} from player's inventory
+                    add 200 to player's balance
+                    send "{@p} &aWpłacono 200$ na konto!" to player
+                    set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                else:
+                    send "{@p} &cNie masz tego przedmiotu przy sobie!" to player
+
+        if clicked slot is 34:
+            if {bankomat::item::500} is set:
+                if player's inventory contains 1 of {bankomat::item::500}:
+                    remove 1 of {bankomat::item::500} from player's inventory
+                    add 500 to player's balance
+                    send "{@p} &aWpłacono 500$ na konto!" to player
+                    set slot 40 of player's current inventory to book named "&6&lTwój stan konta" with lore "&7Posiadasz: &a%player's balance%$" and "" and "&eKliknij dolny rząd (hoppery), aby WPŁACIĆ."
+                else:
+                    send "{@p} &cNie masz tego przedmiotu przy sobie!" to player

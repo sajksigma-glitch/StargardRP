@@ -1,0 +1,36 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:spruce_log": 1,
+      "minecraft:pale_oak_door": 1,
+      "minecraft:blue_stained_glass_pane": 2,
+      "minecraft:spruce_stairs": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:spruce_log": 64,
+      "minecraft:pale_oak_door": 1,
+      "minecraft:spruce_stairs": 64
+    },
+    "minecraft:mined": {
+      "minecraft:blue_stained_glass_pane": 2,
+      "minecraft:pale_oak_door": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2615,
+      "minecraft:walk_one_cm": 24845,
+      "minecraft:leave_game": 13,
+      "minecraft:damage_taken": 210,
+      "minecraft:play_time": 14793,
+      "minecraft:jump": 124,
+      "minecraft:time_since_death": 2595,
+      "minecraft:sprint_one_cm": 7023,
+      "minecraft:fall_one_cm": 1175,
+      "minecraft:total_world_time": 14793,
+      "minecraft:fly_one_cm": 29327,
+      "minecraft:crouch_one_cm": 76,
+      "minecraft:sneak_time": 6,
+      "minecraft:deaths": 1
+    }
+  },
+  "DataVersion": 4903
+}

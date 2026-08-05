@@ -1,0 +1,151 @@
+Prefix: "&cStargardRP&#ffffff➤ &r"
+
+player:
+  not-online: "&cGracz %player% nie jest online."
+  never-been-on-server: "&eGracz %player% nigdy nie grał na tym serwerze."
+  not-found: "&cGracz %player% nie został znaleziony."
+  has-no-warns: "&cGracz %player% nie posiada żadnych ostrzeżeń."
+  unwarned-latest: "&aOstatnie ostrzeżenie gracza %player% zostało cofnięte."
+  not-banned: "&cGracz %player% nie jest zbanowany."
+  never-punished-anyone: "&cGracz %player% nikogo jeszcze nie ukarał."
+  no-kick-all-permission: "&cNie posiadasz uprawnień do wyrzucenia wszystkich graczy. (custombansplus.kick.all)"
+  no-permission: "&cNie masz uprawnień do użycia tej komendy. (%perm%)"
+  ip-not-logged: "&aGracz &f%player%&a nie ma jeszcze zarejestrowanego IP."
+  muted-cannot-place-sign: "&cJesteś wyciszony i nie możesz tymczasowo stawiać tabliczek!"
+  bypasses-ban: "&aGracz &&{#ff3300,#8511F1}%player%&&&a nie może zostać zbanowany!"
+  bypasses-mute: "&aGracz &f%player%&a nie może zostać wyciszony!"
+  bypasses-kick: "&aGracz &f%player%&a nie może zostać wyrzucony!"
+  bypasses-warn: "&aGracz &f%player%&a nie może otrzymać ostrzeżenia!"
+  not-muted: "&aGracz &f%player% &anie jest wyciszony!"
+
+# Formaty wiadomości: %staff% %duration% %reason% %unban-date% %player% %timeleft% /n
+pages:
+  tempban:
+  - "&c&lZostałeś zbanowany!"
+  - ""
+  - "&f Zostałeś zbanowany przez &e&l%staff%&f na &e&l%duration%"
+  - "&f z powodu:"
+  - "&c%reason%"
+  - ""
+  - "&fPozostały czas: %timeleft%"
+
+  permban:
+  - "&c&lZostałeś permanentnie zbanowany!"
+  - ""
+  - "&f Zostałeś na zawsze zbanowany przez &e&l%staff%"
+  - "&f z powodu:"
+  - "&c%reason%"
+
+  kick:
+  - "&c&lZostałeś wyrzucony z serwera!"
+  - ""
+  - "&f Zostałeś wyrzucony przez &e&l%staff%"
+  - "&f z powodu:"
+  - "&c%reason%"
+
+  improper-name:
+  - "Zaloguj się używając nicku \"%name%\"."
+
+# Formaty: %staff% %duration% %reason% %unban-date% %player% %timeleft% /n
+announcers:
+  tempban: "&c&l%player%&f został zbanowany przez &e&l%staff%&f na okres &c&l%duration%&f za: &c%reason%"
+  permban: "&c&l%player%&f został &c&lPermanetnie Zbanowany&f przez &e&l%staff%&f za: &c%reason%"
+  tempipban: "&c&l%player%&f został zbanowany na IP przez &e&l%staff%&f na okres &c&l%duration%&f za: &c%reason%"
+  permipban: "&c&l%player%&f został permanentnie zbanowany na IP przez &e&l%staff%&f za: &c%reason%"
+  tempmute: "&c&l%player%&f został wyciszony przez &e&l%staff%&f na okres &c&l%duration%&f za: &c%reason%"
+  permmute: "&c&l%player%&f został &c&lPermanetnie Wyciszony&f przez &e&l%staff%&f za: &c%reason%"
+  kick: "&c&l%player%&f został wyrzucony przez &e&l%staff%&f za: &c%reason%"
+  warn: "&c&l%player%&f otrzymał ostrzeżenie od &e&l%staff%&f za: &c%reason%"
+  unban: "&e&l%staff%&f odbanował gracza &c&l%player%."
+  unmute: "&e&l%staff%&f odciszył gracza &c&l%player%."
+  no-reason:
+    tempban: "&c&l%player%&f został zbanowany przez &e&l%staff%&f na okres &c&l%duration%"
+    permban: "&c&l%player%&f został &c&lPermanetnie Zbanowany&f przez &e&l%staff%&f"
+    tempipban: "&c&l%player%&f został zbanowany na IP przez &e&l%staff%&f na okres &c&l%duration%"
+    permipban: "&c&l%player%&f został &c&lPermanetnie Zbanowany na IP&f przez &e&l%staff%"
+    tempmute: "&c&l%player%&f został wyciszony przez &e&l%staff%&f na okres &c&l%duration%"
+    permmute: "&c&l%player%&f został &c&lPermanetnie Wyciszony&f przez &e&l%staff%"
+    kick: "&c&l%player%&f został wyrzucony przez &e&l%staff%"
+    warn: "&c&l%player%&f otrzymał ostrzeżenie od &e&l%staff%"
+
+# Format: %timeleft%
+muted-player: "&cJesteś wyciszony! Pozostały czas: &f%timeleft%"
+unmuted-message: "&aZostałeś odciszony."
+
+report:
+  report-successful: "&aZgłoszenie wysłane! Administracja została powiadomiona, prosimy o cierpliwość."
+  blacklisted-message: "&cZnajdujesz się na czarnej liście i nie możesz używać komendy /report."
+  # Formats: %reporter% %reported% %report%
+  staff-notify: "&a%reporter% wysłał zgłoszenie na gracza %reported%! Wpisz /reports show %reported%, aby je przejrzeć. Powód: %report%"
+
+defaults:
+  ban-reason: Trafiony Młotem Bana!
+  mute-reason: 
+  kick-reason: Uderzony Laseczką Kika!
+  warn-reason: Otrzymałeś ostrzeżenie!
+
+command:
+  cb: "&e/cb - Otwiera główne menu CustomBansPlus."
+  banpresets: "&e/bp - Otwiera wszystkie skonfigurowane szablony banów."
+  ban: "&e/ban [-s] <gracz> <czas/duracja/perm> <powód> - Banuje określonego gracza."
+  ipban: "&e/ipban [-s] <gracz> <czas/duracja/perm> <powód> - Banuje aktualne IP gracza."
+  unban: "&e/unban <gracz> - Odbanowuje określonego gracza."
+  warn: "&e/warn [-s] <gracz> <czas> <powód> - Daje ostrzeżenie graczu."
+  unwarn: "&e/unwarn <gracz> - Cofa ostatnie ostrzeżenie gracza."
+  mute: "&e/mute [-s] <gracz> <czas> <powód> - Wycisza określonego gracza."
+  unmute: "&e/unmute <gracz> - Odcisza gracza."
+  kick: "&e/kick [-s] <gracz> <powód> - Wyrzuca gracza z serwera."
+  banlist: "&e/banlist - Otwiera GUI z listą aktywnych banów."
+  history: "&e/hist <gracz> - Pokazuje historię kar danego gracza."
+  staffhist: "&e/staffhist <gracz> - Pokazuje kary nałożone przez tego członka administracji."
+  report: "&e/report <gracz> <powód> - Zgłasza gracza do administracji."
+  reports: "&e/reports - Komenda dla administracji do przeglądania zgłoszeń."
+  alts: "&e/alts <nick> - Pokazuje listę kont powiązanych (multikont) gracza."
+
+duration:
+  second: "Sekunda"
+  seconds: "Sekund(y)"
+  minute: "Minuta"
+  minutes: "Minut(y)"
+  hour: "Godzina"
+  hours: "Godzin(y)"
+  day: "Dzień"
+  days: "Dni"
+  and: "i"
+
+GUI:
+  title-prefix: ""
+  ban-gui-title: "&4Konfiguracja %bantype% &c%player%"
+  presets-gui-title: "&4Szablony &cBanów"
+  history-gui-title: "&dHistoria Kar gracza &5%player%"
+
+# Różne (Miscellaneous)
+silent-prefix: "&f&l[&a&lCICHO&f&l]&r "
+preset-alias-error: "&cAlias &f%alias% &cjuż istnieje dla szablonu \"%preset%\". Ignorowanie tego aliasu."
+player-instance-warning: "&eOstrzeżenie: &cGracz %username% nie wszedł na serwer przed instalacją wtyczki. Gracz zostanie zapisany, ale nie będzie posiadał zapisanego IP."
+duration-accepted-values: "&eAkceptowane wartości: &dperm lub Xd Xh Xm Xs (Możesz je łączyć, np. 1d6h30m)\n&eWpisz nowy czas trwania:"
+balance-reduction-accepted-values: "&eAkceptowane wartości: &dLiczby wymierne i Procenty\n&eWprowadź nową wartość potrącenia stanu konta:"
+console-cmds-desc: "&eKomenda bez znaku /. Rozdzielaj je przecinkami (komendax,komenday). Wpisz gracza jako \"&d%player%&e\". Wpisz \"clear\", aby wyczyścić komendy."
+aliases-desc: "&eWprowadź nowe aliasy szablonu banów. Rozdzielaj je przecinkami (alias1,alias2). Wpisz \"clear\", aby wyczyścić aliasy. Wpisz \"cancel\", aby anulować."
+preset-fixed-reason-desc: "&eWpisz nowy stały powód. Wpisz &dcancel&e, aby anulować."
+action-cancelled: "\u00A7eAkcja została anulowana."
+no-limit-permission: "&cTy lub twoja grupa nie macie ustawionego limitu uprawnień %perm%! Powiadom o tym administratora. Twój limit %perm% zostanie tymczasowo ograniczony do 1d."
+exceeded-limit-permission: "&cPodany czas trwania przekracza maksymalny limit Twój lub Twojej grupy (%limit%). Czas został dostosowany."
+no-value-permission: "&cNie masz uprawnień do używania wartości \"%value%\" dla %perm%."
+muted-player-speak: "&7%player% (wyciszony): %msg%"
+unresolved-reports: "&fNierozpatrzone zgłoszenia: &c%unresolveds%"
+type-new-default-reason: "&eWpisz poniżej nowy domyślny powód. Wpisz \"cancel\", aby anulować."
+messages-yml-updated: "&ePlik Messages.yml został pomyślnie zaktualizowany.\n&d%edit%: &f%msg%"
+already-ip-banned: "&cGracz %player% jest już zbanowany na IP. Użyj /ipban, aby nadpisać."
+already-banned-no-overwrite: "&cGracz %player% jest już zbanowany, a Ty nie masz uprawnień do nadpisywania."
+ip-already-banned-no-overwrite: "&cTo IP jest już zbanowane, a Ty nie masz uprawnień do nadpisywania."
+already-muted-no-overwrite: "&cGracz %player% jest już wyciszony, a Ty nie masz uprawnień do nadpisywania."
+enter-valid-ban: "&cWprowadź prawidłową opcję bana."
+kicking-everyone: "&aWyrzucanie wszystkich graczy z wyjątkiem Ciebie i osób uprzywilejowanych..."
+console-cannot-use: "&cKonsola nie może używać tej komendy."
+alts-header: "&aLista kont (Alts) gracza &f%player% &ana IP &f%ip%&a:"
+reports-list-link: "&e/reports list"
+currently-editing: "&fAktualnie edytujesz: %editing%\n&fWpisz &ecancel&f, aby anulować."
+enter-valid-input: "&cWprowadź poprawne dane."
+preset-name-in-use: "&cNazwa &e%name% &cjest już używana jako nazwa lub alias w innym szablonie."
+preset-alias-in-use: "&cAlias &e%alias% &cjest już używany jako nazwa lub alias w innym szablonie. Ignorowanie tego aliasu."

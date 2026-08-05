@@ -1,0 +1,480 @@
+every 300 seconds:
+    broadcast "<gradient:#00E5FF:#0066FF> ᴡɪᴛᴀᴊ ɴᴀ ꜱᴇʀᴡᴇʀᴢᴇ ꜱᴛᴀʀɢᴀʀᴅᴍᴄ ᴍᴀᴍ ɴᴀᴅᴢɪᴇᴊᴇ ᴢᴇ ʙᴇᴅᴢɪᴇꜱ ꜱɪᴇ ᴅᴏʙʀᴢᴇ ʙᴀᴡɪʟ!</gradient>"
+
+every 200 seconds:
+    broadcast "<gradient:#FF0000:#FF7F00:#FFFF00:#00FF00:#00FFFF:#0000FF:#8B00FF>ᴘᴀᴍɪᴇᴛᴀᴊ ᴏ ᴢᴀʀᴀʙɪᴀɴɪᴜ ᴘɪᴇɴɪᴇᴅᴢʏ ʙᴏ ᴡ ᴋᴀᴢᴅᴇᴊ ᴄʜᴡɪʟɪ ᴍᴏᴢᴇꜱᴢ ᴢʙᴀɴᴋʀᴜᴛᴏᴡᴀᴄ!</gradient>"
+
+# =========================================================================
+# SKRYPT: PVP TYLKO W NOCY
+# =========================================================================
+
+on damage of player:
+    attacker is a player
+    
+    # Minecraft uznaje noc w przedziale czasowym od 13:00 do 23:00 (czasu gry)
+    set {_time} to time of world of victim
+    
+    if {_time} is between 0:00 and 13:00:
+        cancel event
+        send "&c&lPvP jest wyłączone w ciągu dnia! &7(PvP działa tylko w nocy)" to attacker
+
+# PREMIUM
+command /premium:
+    trigger:
+        # Tworzymy GUI o nazwie "Rangą Premium" i 1 rzędzie (9 slotów)
+        set {_gui} to a new chest inventory with 1 row named "&d&lRanga PREMIUM"
+        
+        # Wypełniamy tło szarym szkłem dla lepszego wyglądu (opcjonalne)
+        set {_glass} to gray stained glass pane named " "
+        loop 9 times:
+            set slot (loop-number - 1) of {_gui} to {_glass}
+            
+        # Tworzymy główkę gracza na środku (slot 4) z opisem benefitów
+        set slot 4 of {_gui} to player's skull named "&d&l★ RANGA PREMIUM ★" with lore "" and "&7Oto korzyści płynące z posiadania rangi:" and "" and "&a✔ &fUnikalny prefiks &d[Premium]" and "&a✔ &fDostęp do &a/DailyPremium" and "&a✔ &fDostęp do szybszych leakow na &bdiscord" and "&a✔ &fFlipper Zero (&cJednorazowo&f)" and "" and "&eSklep: &bvishop.pl/shop/30137/server/28487"
+        
+        # Otwieramy GUI graczowi
+        open {_gui} to player
+
+# Blokujemy wyciąganie przedmiotów z tego konkretnego GUI
+on inventory click:
+    if name of event-inventory is "&d&lRanga PREMIUM":
+        cancel event
+
+command /zacmienie:
+    permission: admin.zacmienie
+    permission message: &cNie masz uprawnień do użycia tej komendy!
+    trigger:
+        # Informacja na czacie dla wszystkich
+        broadcast "&c&l[ZACMIENIE] &7Nadchodzi zaćmienie! Serwer zostanie wyłączony za 15 sekund."
+        
+        # Pętla odliczająca od 15 do 1
+        loop 15 times:
+            set {_seconds} to 16 - loop-number
+            
+            # Ogłoszenie na środku ekranu (Title) w kolorze czerwonym &c
+            send title "&c&lZAĆMIENIE" with subtitle "&cWyłączenie serwera za: &e%{_seconds}% &csek." to all players
+            
+            # Dźwięk tykania (opcjonalnie)
+            play sound "block.note_block.pling" to all players
+            
+            wait 1 second
+            
+        # Ostateczny komunikat tuż przed wyłączeniem
+        send title "&c&lZAĆMIENIE" with subtitle "&cRozłączanie..." to all players
+        wait 1 second
+        
+        # Wyłączenie serwera
+        execute console command "stop"
+
+options:
+    tag: &8[&cStargardRP&8]
+    koszt_zmiany: 10000
+    koszt_dowodu: 100
+
+# ----------------------------------------------------
+# 1. FUNKCJE OTWIERANIA GUI
+# ----------------------------------------------------
+
+function openRPGUI(p: player):
+    set {_gui} to chest inventory with 3 rows named "&8&lWybor Imienia i Nazwiska"
+    loop 27 times:
+        set slot (loop-number - 1) of {_gui} to gray stained glass pane named " "
+    set slot 13 of {_gui} to lime concrete named "&a&lSTWÓRŹ POSTAĆ" with lore "&7Kliknij tutaj, aby wpisać", "&7swoje Imię i Nazwisko."
+    open {_gui} to {_p}
+
+function openUrjadGUI(p: player):
+    set {_gui} to chest inventory with 3 rows named "&8&lUrząd - Dział Obywatelski"
+    loop 27 times:
+        set slot (loop-number - 1) of {_gui} to gray stained glass pane named " "
+    set slot 11 of {_gui} to blue concrete named "&b&lWYRÓB NOWY DOWÓD" with lore "&7Koszt wyrobienia: &a$100", "", "&eKliknij, aby wyrobić nowy Dowód Osobisty!"
+    set slot 15 of {_gui} to gold block named "&e&lZMIEŃ IMIĘ I NAZWISKO" with lore "&7Koszt zmiany: &a$10,000", "", "&eKliknij, aby zmienić tożsamość!"
+    open {_gui} to {_p}
+
+# ----------------------------------------------------
+# 2. KOMENDY DLA GRACZA I ADMINA
+# ----------------------------------------------------
+
+command /urzad:
+    trigger:
+        openUrjadGUI(player)
+
+command /rejestracja:
+    trigger:
+        if {rp::imienazwisko::%player's uuid%} is set:
+            send "{@tag} &cMasz już ustawione Imię i Nazwisko!" to player
+        else:
+            openRPGUI(player)
+
+command /resetrp [<player>]:
+    permission: op
+    permission message: {@tag} &cNie masz uprawnień do tej komendy!
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: &f/resetrp <gracz>" to player
+            stop
+        delete {rp::imie::%arg-1's uuid%}
+        delete {rp::nazwisko::%arg-1's uuid%}
+        delete {rp::imienazwisko::%arg-1's uuid%}
+        delete {rp::wpisywanie::%arg-1's uuid%}
+        set {rp::blokada::%arg-1's uuid%} to true
+        reset arg-1's tablist name
+        execute console command "papi parse %arg-1% %%" # Czyszczenie
+        send "{@tag} &aZresetowano dane gracza &e%arg-1%&a!" to player
+        if arg-1 is online:
+            openRPGUI(arg-1)
+
+command /dowod:
+    permission: op
+    permission message: {@tag} &cMusisz udać się do Urzędu (/urzad), aby kupić Dowód Osobisty!
+    trigger:
+        if {rp::imienazwisko::%player's uuid%} is not set:
+            send "{@tag} &cWykonaj najpierw rejestrację!" to player
+            stop
+        give 1 paper named "&b&lDowód Osobisty" with custom model data 2 with lore "&7Właściciel: &e%{rp::imienazwisko::%player's uuid%}%", "" and "&eKliknij PPM na gracza, aby mu pokazać." to player
+        send "{@tag} &aWydano nowy Dowód Osobisty (Komenda Admina)!" to player
+
+# ----------------------------------------------------
+# 3. EVENTY JOIN I ZEZWOLENIA
+# ----------------------------------------------------
+
+on join:
+    if {rp::imienazwisko::%player's uuid%} is set:
+        set player's display name to "%{rp::imienazwisko::%player's uuid%}%"
+        set player's tablist name to "%{rp::imienazwisko::%player's uuid%}%"
+    else:
+        set {rp::blokada::%player's uuid%} to true
+        send "{@tag} &cMusisz wybrać Imię i Nazwisko!" to player
+        wait 40 ticks
+        if player is online:
+            if {rp::imienazwisko::%player's uuid%} is not set:
+                openRPGUI(player)
+
+# ----------------------------------------------------
+# 4. INTERAKCJA Z GUI I URZĘDEM
+# ----------------------------------------------------
+
+on rightclick on entity:
+    if uncoloured name of entity is "Urzędnik":
+        cancel event
+        openUrjadGUI(player)
+
+on inventory click:
+    if name of event-inventory is "&8&lWybor Imienia i Nazwiska":
+        cancel event
+        if index of clicked slot is 13:
+            close player's inventory
+            set {rp::wpisywanie::%player's uuid%} to true
+            send "" to player
+            send "{@tag} &a&lWpisz teraz na czacie swoje Imię i Nazwisko (ze spacją)!" to player
+            send "{@tag} &fPrzykład: &eJan Kowalski" to player
+            send "" to player
+
+    if name of event-inventory is "&8&lUrząd - Dział Obywatelski":
+        cancel event
+        if index of clicked slot is 11:
+            close player's inventory
+            if {rp::imienazwisko::%player's uuid%} is not set:
+                send "{@tag} &cMusisz najpierw zarejestrować postać!" to player
+                stop
+            if player's balance >= {@koszt_dowodu}:
+                remove {@koszt_dowodu} from player's balance
+                remove all paper named "&b&lDowód Osobisty" with custom model data 2 from player's inventory
+                give 1 paper named "&b&lDowód Osobisty" with custom model data 2 with lore "&7Właściciel: &e%{rp::imienazwisko::%player's uuid%}%", "" and "&eKliknij PPM na gracza, aby mu pokazać." to player
+                send "{@tag} &aPobrano &e$100 &aza wydanie nowego Dowodu Osobistego!" to player
+            else:
+                send "{@tag} &cNie masz wystarczająco pieniędzy! Potrzebujesz &e$100&c." to player
+
+        if index of clicked slot is 15:
+            close player's inventory
+            if player's balance >= {@koszt_zmiany}:
+                remove {@koszt_zmiany} from player's balance
+                set {rp::wpisywanie::%player's uuid%} to true
+                send "" to player
+                send "{@tag} &aPobrano &e$10,000 &aza zmianę danych!" to player
+                send "{@tag} &a&lWpisz teraz na czacie NOWE Imię i Nazwisko (ze spacją)!" to player
+                send "{@tag} &fPrzykład: &eJan Kowalski" to player
+                send "" to player
+            else:
+                send "{@tag} &cNie masz wystarczająco pieniędzy! Potrzebujesz &e$10,000&c." to player
+
+    if name of event-inventory contains "Dowód":
+        cancel event
+
+# ----------------------------------------------------
+# 5. RUCH, CHAT I KOMENDY
+# ----------------------------------------------------
+
+on player walk:
+    if {rp::blokada::%player's uuid%} is set:
+        cancel event
+        if {rp::wpisywanie::%player's uuid%} is not set:
+            openRPGUI(player)
+
+on chat:
+    if {rp::wpisywanie::%player's uuid%} is set:
+        cancel event
+        set {_s::*} to message split at " "
+        
+        if size of {_s::*} is not 2:
+            send "{@tag} &cBłąd! Podaj dokładnie dwa słowa: Imię i Nazwisko!" to player
+            send "{@tag} &fWpisz ponownie, np: &eJan Kowalski" to player
+            stop
+            
+        set {_imie} to {_s::1}
+        set {_nazwisko} to {_s::2}
+        
+        set {rp::imie::%player's uuid%} to {_imie}
+        set {rp::nazwisko::%player's uuid%} to {_nazwisko}
+        set {rp::imienazwisko::%player's uuid%} to "%{_imie}% %{_nazwisko}%"
+        
+        delete {rp::blokada::%player's uuid%}
+        delete {rp::wpisywanie::%player's uuid%}
+        
+        # Ustawiamy DisplayName oraz TablistName w Silniku gry
+        set player's display name to "%{rp::imienazwisko::%player's uuid%}%"
+        set player's tablist name to "%{rp::imienazwisko::%player's uuid%}%"
+        
+        send "{@tag} &aUstawiono postać: &e%{rp::imienazwisko::%player's uuid%}%&a!" to player
+        
+        # Gracze przy pierwszej rejestracji nie dostają automatycznie papierka (muszą kupić w urzędzie)
+        send "{@tag} &eUdaj się do Urzędu (/urzad), aby wyrobić swój fizyczny Dowód Osobisty za $100!" to player
+        stop
+
+    if {rp::blokada::%player's uuid%} is set:
+        cancel event
+        send "{@tag} &cMusisz najpierw stworzyć postać!" to player
+
+on command:
+    if {rp::blokada::%player's uuid%} is set:
+        if command is not "rejestracja" or "urzad":
+            cancel event
+
+# ----------------------------------------------------
+# 6. DOWÓD OSOBISTY (PODGLĄD I POKAZYWANIE)
+# ----------------------------------------------------
+
+on rightclick:
+    if clicked entity is not set:
+        if name of player's tool is "&b&lDowód Osobisty":
+            if custom model data of player's tool is 2:
+                cancel event
+                set {_gui} to chest inventory with 3 rows named "&8&lMój Dowód Osobisty"
+                loop 27 times:
+                    set slot (loop-number - 1) of {_gui} to blue stained glass pane named " "
+                set slot 13 of {_gui} to name tag named "&b&l%{rp::imienazwisko::%player's uuid%}%" with lore "&7Imię: &f%{rp::imie::%player's uuid%}%", "&7Nazwisko: &f%{rp::nazwisko::%player's uuid%}%", "" and "&aStatus: Obywatel"
+                open {_gui} to player
+
+on rightclick on player:
+    if name of player's tool is "&b&lDowód Osobisty":
+        if custom model data of player's tool is 2:
+            cancel event
+            set {_target} to clicked entity
+            set {_gui} to chest inventory with 3 rows named "&8&lDowód: %{rp::imienazwisko::%player's uuid%}%"
+            loop 27 times:
+                set slot (loop-number - 1) of {_gui} to blue stained glass pane named " "
+            set slot 13 of {_gui} to name tag named "&b&l%{rp::imienazwisko::%player's uuid%}%" with lore "&7Imię: &f%{rp::imie::%player's uuid%}%", "&7Nazwisko: &f%{rp::nazwisko::%player's uuid%}%", "" and "&aStatus: Obywatel"
+            
+            open {_gui} to {_target}
+            send "{@tag} &aPokazałeś swój Dowód Osobisty graczowi &e%{_target}%&a." to player
+            send "{@tag} &aGracz &e%player% &apokazał Ci swój Dowód Osobisty." to {_target}
+
+# ----------------------------------------------------
+# Skrypt na Butelkomat i Śmietniki (Custom Model Data 1)
+# ----------------------------------------------------
+
+# Automatyczna zmiana nazwy i Custom Model Data zwykłych butelek co 2 sekundy
+every 2 seconds:
+    loop all players:
+        loop all items in loop-player's inventory:
+            if loop-item is glass bottle:
+                if name of loop-item is not set:
+                    set name of loop-item to "&f&lKaucyjna"
+                    set custom model data of loop-item to 1
+
+# Natychmiastowa zmiana nazwy i Custom Model Data przy podniesieniu
+on pickup of glass bottle:
+    if name of event-item is not set:
+        set name of event-item to "&f&lKaucyjna"
+        set custom model data of event-item to 1
+
+# ----------------------------------------------------
+# KOMENDY ADMINISTRACYJNE
+# ----------------------------------------------------
+
+# Butelkomat
+command /butelkomat-ustawblok:
+    permission: admin.butelkomat
+    permission message: &cNie masz uprawnień do tej komendy!
+    trigger:
+        if targeted block is air:
+            send "&cMusisz patrzeć na jakiś blok!" to player
+            stop
+        set {butelkomat::block} to location of targeted block
+        send "&aPomyślnie ustawiono blok butelkomatu!" to player
+
+command /butelkomat-usunblok:
+    permission: admin.butelkomat
+    permission message: &cNie masz uprawnień do tej komendy!
+    trigger:
+        if {butelkomat::block} is not set:
+            send "&cŻaden blok butelkomatu nie jest obecnie ustawiony!" to player
+            stop
+        delete {butelkomat::block}
+        send "&aPomyślnie usunięto pozycję butelkomatu!" to player
+
+# Śmietnik
+command /smietnik-ustawblok:
+    permission: admin.smietnik
+    permission message: &cNie masz uprawnień do tej komendy!
+    trigger:
+        if targeted block is air:
+            send "&cMusisz patrzeć na jakiś blok!" to player
+            stop
+        add location of targeted block to {smietniki::*}
+        send "&aPomyślnie dodano nowy śmietnik!" to player
+
+command /smietnik-usunblok:
+    permission: admin.smietnik
+    permission message: &cNie masz uprawnień do tej komendy!
+    trigger:
+        if targeted block is air:
+            send "&cMusisz patrzeć na jakiś blok!" to player
+            stop
+        if {smietniki::*} contains location of targeted block:
+            remove location of targeted block from {smietniki::*}
+            send "&aPomyślnie usunięto ten śmietnik!" to player
+        else:
+            send "&cTen blok nie jest zarejestrowany jako śmietnik!" to player
+
+# ----------------------------------------------------
+# OBSŁUGA INTERAKCJI (PPM)
+# ----------------------------------------------------
+
+on rightclick:
+    if clicked block is set:
+        # Blokada otwierania czegokolwiek podczas szukania
+        if {searching::%player%} is set:
+            cancel event
+            stop
+
+        # 1. LOGIKA ŚMIETNIKA
+        if {smietniki::*} contains location of clicked block:
+            cancel event
+            
+            # Sprawdzanie czasowej blokady (cooldown 10 min)
+            set {_loc} to location of clicked block
+            if {smietnik::cooldown::%player%::%{_loc}%} is set:
+                set {_time} to difference between {smietnik::cooldown::%player%::%{_loc}%} and now
+                if {_time} < 10 minutes:
+                    set {_left} to 10 minutes
+                    remove {_time} from {_left}
+                    send "&cTen śmietnik został już przeszukany! Musisz odczekać jeszcze &f%{_left}%&c." to player
+                    play sound "entity.villager.no" to player
+                    stop
+            
+            # System dwukrotnego kliknięcia
+            if {doubleclick::%player%} is not set:
+                set {doubleclick::%player%} to true
+                send "&7Kliknij &aJESZCZE RAZ&7, aby przeszukać śmietnik." to player
+                wait 1.5 seconds
+                delete {doubleclick::%player%}
+                stop
+                
+            delete {doubleclick::%player%}
+            
+            # Zapisanie czasu przeszukania
+            set {smietnik::cooldown::%player%::%{_loc}%} to now
+            
+            # Rozpoczęcie przeszukiwania
+            set {searching::%player%} to true
+            set walk speed of player to 0
+            send "&6Przeszukujesz śmietnik... (5s)" to player
+            play sound "block.gravel.break" to player
+            
+            # Odliczanie 5 sekund
+            loop 5 times:
+                play sound "block.sand.step" to player
+                wait 1 second
+                
+            delete {searching::%player%}
+            reset walk speed of player
+            
+            # Drop (25% Butelka, 25% Papier, 50% Nic)
+            set {_chance} to random integer between 1 and 100
+            
+            if {_chance} <= 25:
+                set {_b} to 1 glass bottle named "&f&lKaucyjna"
+                set custom model data of {_b} to 1
+                give {_b} to player
+                send "&a&lŚMIETNIK &8» &7Znaleziono: &f1x Butelka Kaucyjna&7!" to player
+                play sound "entity.item.pickup" to player
+            else if {_chance} <= 50:
+                give 1 paper to player
+                send "&a&lŚMIETNIK &8» &7Znaleziono: &f1x Papier&7!" to player
+                play sound "entity.item.pickup" to player
+            else:
+                send "&c&lŚMIETNIK &8» &7Śmietnik okazuje się pusty..." to player
+                play sound "entity.villager.no" to player
+            stop
+
+        # 2. LOGIKA BUTELKOMATU
+        if {butelkomat::block} is set:
+            if location of clicked block is {butelkomat::block}:
+                cancel event
+                
+                loop all items in player's inventory:
+                    if loop-item is glass bottle:
+                        if name of loop-item is not set:
+                            set name of loop-item to "&f&lKaucyjna"
+                            set custom model data of loop-item to 1
+
+                set {_gui} to chest inventory with 3 rows named "&2&lBUTELKOMAT"
+                set slots (integers from 0 to 26) of {_gui} to gray stained glass pane named " "
+                set slot 13 of {_gui} to hopper named "&a&lODDAJ BUTELKI" with lore "&7Kliknij tutaj, aby sprzedać", "&7wszystkie kaucjonowane butelki", "&7z ekwipunku.", "", "&aStawka: &f0.50$ &7/ szt."
+                
+                open {_gui} to player
+                stop
+
+# Zabezpieczenia podczas szukania w śmietniku
+on inventory open:
+    if {searching::%player%} is set:
+        cancel event
+
+on damage:
+    if {searching::%attacker%} is set:
+        cancel event
+
+# Reset predkosci w razie wyjscia gracza z serwera
+on quit:
+    if {searching::%player%} is set:
+        delete {searching::%player%}
+        reset walk speed of player
+
+# ----------------------------------------------------
+# OBSŁUGA KLIKNIĘĆ W GUI BUTELKOMATU
+# ----------------------------------------------------
+
+on inventory click:
+    if name of event-inventory is "&2&lBUTELKOMAT":
+        cancel event
+        if index of event-slot is 13:
+            close player's inventory
+            
+            set {_count} to 0
+            loop all items in player's inventory:
+                if loop-item is glass bottle:
+                    if name of loop-item is "&f&lKaucyjna":
+                        add amount of loop-item to {_count}
+                        remove loop-item from player's inventory
+            
+            if {_count} is 0:
+                send "&cNie masz w ekwipunku żadnych kaucjonowanych butelek!" to player
+                play sound "entity.villager.no" to player
+                stop
+                
+            set {_money} to {_count} * 0.50
+            execute console command "eco give %player% %{_money}%"
+            
+            play sound "entity.experience_orb.pickup" to player
+            send "&a&lBUTELKOMAT &8» &7Oddano &f%{_count}% &7butelek." to player
+            send "&aOtrzymujesz &f%{_money}%$&a!" to player

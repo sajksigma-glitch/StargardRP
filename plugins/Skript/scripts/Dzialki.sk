@@ -1,0 +1,504 @@
+# ==========================================
+# KONFIGURACJA
+# ==========================================
+options:
+    tag: &8[&cStargardRP&8]
+
+# ==========================================
+# POMOCNICZE FUNKCJE
+# ==========================================
+function maDostepDoDzialki(p: player, main_id: text) :: boolean:
+    if {_p} has permission "dzialki.admin":
+        return true
+    set {_wlasciciel} to {dzialki::%{_main_id}%::wlasciciel}
+    if {_wlasciciel} is "%{_p}%":
+        return true
+    if {dzialki::%{_main_id}%::zaufani::*} contains "%{_p}%":
+        return true
+    return false
+
+function pobierzGlownaDzialke(loc: location) :: text:
+    set {_rg::*} to regions at {_loc}
+    if size of {_rg::*} > 0:
+        loop {_rg::*}:
+            set {_id} to "%loop-value%"
+            set {_split::*} to {_id} split at " "
+            set {_clean_id} to {_split::1}
+            if {dzialki::subregion::%{_clean_id}%} is set:
+                set {_clean_id} to {dzialki::subregion::%{_clean_id}%}
+            if {dzialki::%{_clean_id}%::cena} is set:
+                return {_clean_id}
+    return ""
+
+# ==========================================
+# 1. BLOKOWANIE BUDOWANIA, NISZCZENIA I INTERAKCJI
+# ==========================================
+on break:
+    set {_main_id} to pobierzGlownaDzialke(event-location)
+    if {_main_id} is not "":
+        if maDostepDoDzialki(player, {_main_id}) is false:
+            cancel event
+            send "{@tag} &cNie masz uprawnień do niszczenia na tej działce!" to player
+
+on place:
+    set {_main_id} to pobierzGlownaDzialke(event-location)
+    if {_main_id} is not "":
+        if maDostepDoDzialki(player, {_main_id}) is false:
+            cancel event
+            send "{@tag} &cNie masz uprawnień do budowania na tej działce!" to player
+
+on right click:
+    if clicked block is set:
+        set {_main_id} to pobierzGlownaDzialke(clicked block's location)
+        if {_main_id} is not "":
+            if maDostepDoDzialki(player, {_main_id}) is false:
+                cancel event
+                send "{@tag} &cNie masz uprawnień do interakcji na tej działce!" to player
+            else:
+                uncancel event
+
+# ==========================================
+# 2. TWORZENIE I WYSTAWIANIE DZIAŁKI (ADMIN/MOD)
+# ==========================================
+command /dzialka-stworz [<number>] [<number>] [<number>]:
+    permission: dzialki.admin
+    permission message: {@tag} &cNie masz uprawnień do tej komendy!
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: /dzialka-stworz <kratki-w-gore> <kratki-w-dol> [cena]"
+            send "{@tag} &7Zaznacz spód działki siekierką WorldEdita (//wand)."
+            stop
+            
+        set {_up} to arg-1
+        set {_down} to arg-2
+        
+        execute player command "//expand %{_up}% up"
+        execute player command "//expand %{_down}% down"
+        
+        set {_id} to "dzialka_%random integer between 10000 and 99999%"
+        execute player command "/rg define %{_id}%"
+        
+        execute console command "rg setpriority -w %player's world% %{_id}% 100"
+        
+        execute console command "rg flag -w %player's world% %{_id}% pvp deny"
+        execute console command "rg flag -w %player's world% %{_id}% passthrough allow"
+        execute console command "rg flag -w %player's world% %{_id}% build allow"
+        execute console command "rg flag -w %player's world% %{_id}% use -g all allow"
+        execute console command "rg flag -w %player's world% %{_id}% interact -g all allow"
+        execute console command "rg flag -w %player's world% %{_id}% chest-access -g all allow"
+        
+        if arg-3 is set:
+            set {_cena} to arg-3
+        else:
+            set {_cena} to 5000
+            
+        set {dzialki::%{_id}%::cena} to {_cena}
+        set {dzialki::%{_id}%::wystawiona} to true
+        set {dzialki::%{_id}%::wlasciciel} to "BRAK"
+        set {dzialki::%{_id}%::pvp} to false
+        
+        send "{@tag} &aPomyślnie stworzono działkę o ID: &e%{_id}%"
+        send "{@tag} &7Cena działki wynosi: &a$%{_cena}%"
+
+# ==========================================
+# 3. POWIĘKSZANIE DZIAŁKI
+# ==========================================
+
+# METODA A: Powiększanie ręczne na podstawie wysokości/głębokości
+command /dzialka-powieksz [<text>] [<number>] [<number>]:
+    permission: dzialki.admin
+    permission message: {@tag} &cNie masz uprawnień do tej komendy!
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: /dzialka-powieksz <ID-glownej-dzialki> <w-gore> <w-dol>"
+            stop
+            
+        set {_parent_id} to arg-1
+        set {_up} to arg-2
+        set {_down} to arg-3
+        
+        if {_up} is not set:
+            set {_up} to 0
+        if {_down} is not set:
+            set {_down} to 0
+            
+        if {dzialki::%{_parent_id}%::cena} is not set:
+            send "{@tag} &cDziałka o ID &e%{_parent_id}% &cnie istnieje!"
+            stop
+
+        execute player command "//pos1"
+        execute player command "//pos2"
+        
+        if {_up} > 0:
+            execute player command "//expand %{_up}% up"
+        if {_down} > 0:
+            execute player command "//expand %{_down}% down"
+            
+        set {_sub_id} to "%{_parent_id}%_ext_%random integer between 1000 and 9999%"
+        execute player command "/rg define %{_sub_id}%"
+        execute console command "rg setparent -w %player's world% %{_sub_id}% %{_parent_id}%"
+        execute console command "rg setpriority -w %player's world% %{_sub_id}% 100"
+        execute console command "rg flag -w %player's world% %{_sub_id}% passthrough allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% build allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% use -g all allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% interact -g all allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% chest-access -g all allow"
+        
+        add {_sub_id} to {dzialki::%{_parent_id}%::powiekszenia::*}
+        set {dzialki::subregion::%{_sub_id}%} to {_parent_id}
+        
+        send "{@tag} &aPomyślnie doklejono nowy obszar do działki &e%{_parent_id}%&a!"
+
+# METODA B: Doklejanie obszaru zaznaczonego siekierką WorldEdita (//wand)
+command /dzialka-powieksz-zaznaczenie [<text>]:
+    permission: dzialki.admin
+    permission message: {@tag} &cNie masz uprawnień do tej komendy!
+    trigger:
+        set {_parent_id} to ""
+        if arg-1 is set:
+            set {_parent_id} to arg-1
+        else:
+            set {_parent_id} to pobierzGlownaDzialke(player's location)
+
+        if {_parent_id} is "":
+            send "{@tag} &cPodaj ID działki lub stań na niej: &f/dzialka-powieksz-zaznaczenie <ID>"
+            stop
+
+        if {dzialki::%{_parent_id}%::cena} is not set:
+            send "{@tag} &cDziałka o ID &e%{_parent_id}% &cnie istnieje!"
+            stop
+
+        set {_sub_id} to "%{_parent_id}%_ext_%random integer between 1000 and 9999%"
+        
+        # Definiowanie nowego regionu na podstawie obecnego zaznaczenia w WorldEdit
+        execute player command "/rg define %{_sub_id}%"
+        execute console command "rg setparent -w %player's world% %{_sub_id}% %{_parent_id}%"
+        execute console command "rg setpriority -w %player's world% %{_sub_id}% 100"
+        execute console command "rg flag -w %player's world% %{_sub_id}% passthrough allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% build allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% use -g all allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% interact -g all allow"
+        execute console command "rg flag -w %player's world% %{_sub_id}% chest-access -g all allow"
+        
+        add {_sub_id} to {dzialki::%{_parent_id}%::powiekszenia::*}
+        set {dzialki::subregion::%{_sub_id}%} to {_parent_id}
+        
+        send "{@tag} &aPomyślnie podłączono zaznaczony teren z WorldEdita do działki &e%{_parent_id}%&a!"
+
+# METODA C: Powiększanie działki o kwadrat/promień
+command /dzialka-powieksz-kwadrat [<number>] [<text>]:
+    permission: dzialki.admin
+    permission message: {@tag} &cNie masz uprawnień do tej komendy!
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: /dzialka-powieksz-kwadrat <ilosc-kratek> [ID-glownej-dzialki]"
+            stop
+
+        set {_kratki} to arg-1
+        set {_parent_id} to ""
+        
+        if arg-2 is set:
+            set {_parent_id} to arg-2
+        else:
+            set {_parent_id} to pobierzGlownaDzialke(player's location)
+
+        if {_parent_id} is "":
+            send "{@tag} &cMusisz stać na działce lub podać jej ID!"
+            stop
+
+        if {dzialki::%{_parent_id}%::cena} is not set:
+            send "{@tag} &cDziałka o ID &e%{_parent_id}% &cnie istnieje!"
+            stop
+
+        # Zaznacza obszar głównej działki i rozszerza go w każdą stronę
+        execute player command "/rg select %{_parent_id}%"
+        execute player command "//outset %{_kratki}%"
+        
+        # Redefiniuje główny region z uwzględnieniem nowego rozmiaru
+        execute player command "/rg redefine %{_parent_id}%"
+        
+        send "{@tag} &aPomyślnie powiększono kwadrat działki &e%{_parent_id}% &ao &e%{_kratki}% &akratek w każdą stronę!"
+
+# ==========================================
+# 4. USUWANIE DZIAŁKI
+# ==========================================
+command /dzialka-usun [<text>]:
+    permission: dzialki.admin
+    permission message: {@tag} &cNie masz uprawnień do tej komendy!
+    trigger:
+        set {_target_id} to ""
+        
+        if arg-1 is set:
+            set {_target_id} to arg-1
+            if {dzialki::subregion::%{_target_id}%} is set:
+                set {_target_id} to {dzialki::subregion::%{_target_id}%}
+        else:
+            set {_target_id} to pobierzGlownaDzialke(player's location)
+
+        if {_target_id} is "":
+            send "{@tag} &cMusisz stać na działce albo podać jej ID: &f/dzialka-usun <ID>"
+            stop
+
+        if {dzialki::%{_target_id}%::cena} is not set:
+            send "{@tag} &cDziałka o ID &e%{_target_id}% &cnie istnieje!"
+            stop
+
+        loop {dzialki::%{_target_id}%::powiekszenia::*}:
+            set {_sub} to loop-value
+            execute console command "rg remove -w %player's world% %{_sub}%"
+            delete {dzialki::subregion::%{_sub}%}
+        delete {dzialki::%{_target_id}%::powiekszenia::*}
+
+        execute console command "rg remove -w %player's world% %{_target_id}%"
+
+        delete {dzialki::%{_target_id}%::cena}
+        delete {dzialki::%{_target_id}%::wystawiona}
+        delete {dzialki::%{_target_id}%::wlasciciel}
+        delete {dzialki::%{_target_id}%::zaufani::*}
+        delete {dzialki::%{_target_id}%::pvp}
+
+        clear player's title
+        send "{@tag} &aUsunięto działkę &e%{_target_id}%&a!"
+
+# ==========================================
+# 5. USTAWIENIA DZIAŁKI (GUI & USTAWIENIA)
+# ==========================================
+command /dzialka-ustawienia:
+    trigger:
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cMusisz stać na swojej działce!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is not "%player%":
+            if player doesn't have permission "dzialki.admin":
+                send "{@tag} &cTylko właściciel działki może zmieniać jej ustawienia!"
+                stop
+
+        open chest inventory with 3 rows named "&8Ustawienia Działki" to player
+        
+        if {dzialki::%{_main_id}%::pvp} is true:
+            set slot 11 of player's current inventory to green wool named "&aPVP: &2WŁĄCZONE" with lore "&7Kliknij, aby &cWYŁĄCZYĆ &7PVP na działce."
+        else:
+            set slot 11 of player's current inventory to red wool named "&cPVP: &4WYŁĄCZONE" with lore "&7Kliknij, aby &aWŁĄCZYĆ &7PVP na działce."
+
+        set {_zaufani_lore::1} to "&7Lista zaufanych graczy:"
+        loop {dzialki::%{_main_id}%::zaufani::*}:
+            add "&8- &e%loop-value%" to {_zaufani_lore::*}
+        add "" to {_zaufani_lore::*}
+        add "&eUżyj komend:" to {_zaufani_lore::*}
+        add "&f/dzialka-dodaj <gracz>" to {_zaufani_lore::*}
+        add "&f/dzialka-usun-gracza <gracz>" to {_zaufani_lore::*}
+        
+        set slot 15 of player's current inventory to player's skull named "&eZaufani Gracze" with lore {_zaufani_lore::*}
+
+on inventory click:
+    if name of event-inventory is "&8Ustawienia Działki":
+        cancel event
+        if index of clicked slot is 11:
+            execute player command "/dzialka-przelacz-pvp"
+            close player's inventory
+
+command /dzialka-przelacz-pvp:
+    trigger:
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cMusisz stać na swojej działce!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is not "%player%":
+            if player doesn't have permission "dzialki.admin":
+                send "{@tag} &cBrak uprawnień!"
+                stop
+
+        if {dzialki::%{_main_id}%::pvp} is true:
+            set {dzialki::%{_main_id}%::pvp} to false
+            execute console command "rg flag -w %player's world% %{_main_id}% pvp deny"
+            send "{@tag} &cWyłączono PVP na działce!"
+        else:
+            set {dzialki::%{_main_id}%::pvp} to true
+            execute console command "rg flag -w %player's world% %{_main_id}% pvp allow"
+            send "{@tag} &aWłączono PVP na działce!"
+
+command /dzialka-dodaj [<offline player>]:
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: /dzialka-dodaj <gracz>"
+            stop
+            
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cMusisz stać na swojej działce!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is not "%player%":
+            if player doesn't have permission "dzialki.admin":
+                send "{@tag} &cNie jesteś właścicielem tej działki!"
+                stop
+
+        set {_target} to "%arg-1%"
+        if {dzialki::%{_main_id}%::zaufani::*} contains {_target}:
+            send "{@tag} &cTen gracz jest już dodany do działki!"
+            stop
+
+        add {_target} to {dzialki::%{_main_id}%::zaufani::*}
+        execute console command "rg addmember -w %player's world% %{_main_id}% %{_target}%"
+        send "{@tag} &aDodano gracza &e%{_target}% &ado zaufanych na działce!"
+
+command /dzialka-usun-gracza [<offline player>]:
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: /dzialka-usun-gracza <gracz>"
+            stop
+            
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cMusisz stać na swojej działce!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is not "%player%":
+            if player doesn't have permission "dzialki.admin":
+                send "{@tag} &cNie jesteś właścicielem tej działki!"
+                stop
+
+        set {_target} to "%arg-1%"
+        if {dzialki::%{_main_id}%::zaufani::*} does not contain {_target}:
+            send "{@tag} &cTen gracz nie jest zaufany na tej działce!"
+            stop
+
+        remove {_target} from {dzialki::%{_main_id}%::zaufani::*}
+        execute console command "rg removemember -w %player's world% %{_main_id}% %{_target}%"
+        send "{@tag} &cUsunięto gracza &e%{_target}% &zz zaufanych na działce!"
+
+# ==========================================
+# 6. INFORMACJE O DZIAŁCE
+# ==========================================
+command /dzialka-info:
+    trigger:
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cNie stoisz na żadnej działce."
+            stop
+            
+        send "{@tag} &8--- &aInformacje o Działce &8---"
+        send "{@tag} &7ID Działki: &e%{_main_id}%"
+        send "{@tag} &7Właściciel: &e%{dzialki::%{_main_id}%::wlasciciel}%"
+        send "{@tag} &7Cena: &a$%{dzialki::%{_main_id}%::cena}%"
+        if {dzialki::%{_main_id}%::pvp} is true:
+            send "{@tag} &7PVP: &aWłączone"
+        else:
+            send "{@tag} &7PVP: &cWyłączone"
+            
+        if size of {dzialki::%{_main_id}%::zaufani::*} > 0:
+            send "{@tag} &7Zaufani: &e%{dzialki::%{_main_id}%::zaufani::*}%"
+        else:
+            send "{@tag} &7Zaufani: &cBrak"
+
+        if {dzialki::%{_main_id}%::wystawiona} is true:
+            send "{@tag} &7Status: &aNa sprzedaż (Wpisz /kup)"
+        else:
+            send "{@tag} &7Status: &cSprzedana"
+
+# ==========================================
+# 7. AUTOMATYCZNE SUBTITLE NA DZIAŁCE
+# ==========================================
+every 1 second:
+    loop all players:
+        set {_main_id} to pobierzGlownaDzialke(loop-player's location)
+        if {_main_id} is not "":
+            if {dzialki::%{_main_id}%::wystawiona} is true:
+                set {_cena} to {dzialki::%{_main_id}%::cena}
+                send title "&a&lDZIAŁKA NA SPRZEDAŻ" with subtitle "&7Cena: &a$%{_cena}% &7| Wpisz &f/kup" to loop-player for 2 seconds
+            else:
+                clear loop-player's title
+
+# ==========================================
+# 8. KUPOWANIE, SPRZEDAWANIE I ANULOWANIE
+# ==========================================
+command /kup:
+    trigger:
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cMusisz stać na działce, którą chcesz kupić!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wystawiona} is not true:
+            send "{@tag} &cTa działka nie jest obecnie na sprzedaż!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is "%player%":
+            send "{@tag} &cNie możesz kupić swojej własnej działki! Aby wycofać ją ze sprzedaży, wpisz &f/dzialka-anulujsprzedaz&c."
+            stop
+            
+        set {_cena} to {dzialki::%{_main_id}%::cena}
+        
+        if player's balance < {_cena}:
+            send "{@tag} &cNie masz wystarczająco pieniędzy! Potrzebujesz &a$%{_cena}%&c."
+            stop
+            
+        set {_stary_wlasciciel} to {dzialki::%{_main_id}%::wlasciciel}
+        
+        if {_stary_wlasciciel} is not "BRAK":
+            set {_prev} to {_stary_wlasciciel} parsed as offline player
+            if {_prev} is set:
+                add {_cena} to {_prev}'s balance
+                if {_prev} is online:
+                    send "{@tag} &aTwój teren &e%{_main_id}% &azostał sprzedany! Otrzymujesz &a$%{_cena}%&a." to {_prev}
+            
+            execute console command "rg removeowner -w %player's world% %{_main_id}% %{_stary_wlasciciel}%"
+        
+        remove {_cena} from player's balance
+        set {dzialki::%{_main_id}%::wystawiona} to false
+        set {dzialki::%{_main_id}%::wlasciciel} to "%player%"
+        
+        delete {dzialki::%{_main_id}%::zaufani::*}
+        
+        execute console command "rg addowner -w %player's world% %{_main_id}% %player%"
+        clear player's title
+        
+        send "{@tag} &aGratulacje! Zakupiłeś działkę &e%{_main_id}% &aza &a$%{_cena}%!"
+
+command /sprzedaj [<number>]:
+    trigger:
+        if arg-1 is not set:
+            send "{@tag} &cUżycie: /sprzedaj <cena>"
+            stop
+            
+        set {_cena} to arg-1
+        if {_cena} <= 0:
+            send "{@tag} &cCena musi być większa od 0!"
+            stop
+            
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cNie stoisz na żadnej działce."
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is "%player%":
+            set {dzialki::%{_main_id}%::cena} to {_cena}
+            set {dzialki::%{_main_id}%::wystawiona} to true
+            send "{@tag} &aWystawiłeś swoją działkę &e%{_main_id}% &ana sprzedaż za &a$%{_cena}%&a!"
+            send "{@tag} &7Możesz anulować sprzedaż wpisując: &f/dzialka-anulujsprzedaz"
+        else:
+            send "{@tag} &cNie jesteś właścicielem tej działki!"
+
+command /dzialka-anulujsprzedaz:
+    aliases: /anuluj
+    trigger:
+        set {_main_id} to pobierzGlownaDzialke(player's location)
+        if {_main_id} is "":
+            send "{@tag} &cMusisz stać na swojej działce!"
+            stop
+            
+        if {dzialki::%{_main_id}%::wlasciciel} is not "%player%":
+            if player doesn't have permission "dzialki.admin":
+                send "{@tag} &cNie jesteś właścicielem tej działki!"
+                stop
+
+        if {dzialki::%{_main_id}%::wystawiona} is not true:
+            send "{@tag} &cTa działka nie jest obecnie wystawiona na sprzedaż."
+            stop
+
+        set {dzialki::%{_main_id}%::wystawiona} to false
+        clear player's title
+        send "{@tag} &aPomyślnie wycofano działkę &e%{_main_id}% &zze sprzedaży!"

@@ -1,0 +1,222 @@
+
+# ==========================================
+# KOMENDA DAJĄCA FLIPPER ZERO
+# ==========================================
+command /flipper give [<player>]:
+    trigger:
+        if player does not have permission "flipper.admin":
+            send "&cNie masz uprawnień do tej komendy!" to player
+            stop
+            
+        set {_target} to arg-1
+        if {_target} is not set:
+            set {_target} to player
+        
+        give 1 copper ingot named "&b&lFlipper Zero" with lore "&7Kliknij &eLPM&7, aby otworzyć interfejs." to {_target}
+        send "&aPrzekazano Flipper Zero dla &e%{_target}%&a!" to player
+
+# ==========================================
+# OBSŁUGA KLIKNIĘCIA PRZEDMIOTU (LPM)
+# ==========================================
+on left click:
+    if player's tool is copper ingot:
+        if name of player's tool is "&b&lFlipper Zero":
+            cancel event
+            
+            set {_gui} to a new chest inventory with 1 row named "&8[ &bFlipper Zero &8]"
+            set slot (integers from 0 to 8) of {_gui} to gray stained glass pane named " "
+            set slot 2 of {_gui} to lime wool named "&a&lOTWÓRZ DRZWI" with lore "&7Wysyła sygnał otwarcia (3 kratki)."
+            set slot 6 of {_gui} to red wool named "&c&lZAMKNIJ DRZWI" with lore "&7Odejmne sygnał otwarcia (3 kratki)."
+            
+            open {_gui} to player
+
+# ==========================================
+# OBSŁUGA KLIKNIĘĆ W GUI
+# ==========================================
+on inventory click:
+    if name of event-inventory is "&8[ &bFlipper Zero &8]":
+        cancel event
+        
+        # --- ZIELONY PRZYCISK (OTWIERANIE) ---
+        if index of event-slot is 2:
+            close player's inventory
+            set {_found} to false
+            
+            loop blocks in radius 3 around player:
+                if loop-block is iron door:
+                    # Wykrywamy tylko dolną część drzwi
+                    if "%block data of loop-block%" contains "half=lower":
+                        # Stawiamy POCHODNIĘ REDSTONE 2 kratki pod drzwiami (pod podłogą)
+                        set block 2 blocks below loop-block to redstone torch
+                        set {_found} to true
+            
+            if {_found} is true:
+                send "&a&l[Flipper Zero] &fWysyłanie sygnału... &aDrzwi otwarte!" to player
+                play sound "block.iron_door.open" at location of player
+            else:
+                send "&c&l[Flipper Zero] &fNie znaleziono żelaznych drzwi w zasięgu 3 kratek!" to player
+
+        # --- CZERWONY PRZYCISK (ZAMYKANIE) ---
+        if index of event-slot is 6:
+            close player's inventory
+            set {_found} to false
+            
+            loop blocks in radius 3 around player:
+                if loop-block is iron door:
+                    if "%block data of loop-block%" contains "half=lower":
+                        # Usuwamy pochodnię redstone pod podłogą
+                        if block 2 blocks below loop-block is redstone torch:
+                            set block 2 blocks below loop-block to air
+                        set {_found} to true
+            
+            if {_found} is true:
+                send "&c&l[Flipper Zero] &fWysyłanie sygnału... &cDrzwi zamknięte!" to player
+                play sound "block.iron_door.close" at location of player
+            else:
+                send "&c&l[Flipper Zero] &fNie znaleziono żelaznych drzwi w zasięgu 3 kratek!" to player
+
+# ============================================
+# RESET ZMIENNYCH PRZY STARTZE SKRYPTU
+# ============================================
+on script load:
+    delete {prowadzi::*}
+    delete {jest_prowadzony::*}
+    delete {skajdanowany::*}
+
+# ============================================
+# KOMENDA DAJĄCA KAJDANKI
+# ============================================
+command /kkl [<player>]:
+    permission: op
+    permission message: &cNie masz uprawnień!
+    trigger:
+        if arg-1 is not set:
+            send "&cUżycie: /kkl <nazwa gracza>" to player
+            stop
+        
+        # Tworzymy przedmiot z custom model data 1
+        set {_item} to 1 of amethyst shard named "&cKajdanki" with custom model data 1
+        give {_item} to arg-1
+        
+        send "&aDałeś kajdanki graczu &e%arg-1%&a!" to player
+        send "&aOtrzymałeś &cKajdanki&a!" to arg-1
+
+# ============================================
+# INTERAKCJA (PPM)
+# ============================================
+on right click:
+    set {_target} to targeted player
+    
+    # Jeśli patrzymy na jakiegoś gracza z bliska (do 4 bloków)
+    if {_target} is set:
+        if distance between player and {_target} <= 4:
+            
+            # --- SCENARIUSZ 1: KUCANIE (SHIFT + PPM) -> ZDEJMOWANIE KAJDANEK ---
+            if player is sneaking:
+                if {skajdanowany::%{_target}%} is set:
+                    cancel event
+                    
+                    # Odpinamy prowadzenie
+                    if {jest_prowadzony::%{_target}%} is set:
+                        set {_p} to {jest_prowadzony::%{_target}%}
+                        delete {prowadzi::%{_p}%}
+                        delete {jest_prowadzony::%{_target}%}
+                    
+                    delete {skajdanowany::%{_target}%}
+                    send "&aZdjąłeś kajdanki graczu &e%{_target}%&a." to player
+                    send "&aZostałeś rozkuty przez &e%player%&a." to {_target}
+                    stop
+
+            # --- SCENARIUSZ 2: GRACZ NIE JEST ZAKUTY -> ZAKUWANIE KAJDANKAMI ---
+            if {skajdanowany::%{_target}%} is not set:
+                # Sprawdzamy, czy w ręce jest przedmiot z nazwą Kajdanki oraz CustomModelData 1
+                if name of player's tool contains "Kajdanki":
+                    if custom model data of player's tool is 1:
+                        cancel event
+                        set {skajdanowany::%{_target}%} to true
+                        send "&cZakułeś gracza &e%{_target}% &cw kajdanki!" to player
+                        send "&cZostałeś zakuty w kajdanki przez &e%player%&c!" to {_target}
+                        stop
+
+            # --- SCENARIUSZ 3: GRACZ JEST JUŻ ZAKUTY -> ŁAPANIE / PUSZCZANIE ---
+            else if {skajdanowany::%{_target}%} is true:
+                cancel event
+                
+                # Jeśli Ty go już prowadzisz -> Puszczasz go
+                if {prowadzi::%player%} is {_target}:
+                    delete {prowadzi::%player%}
+                    delete {jest_prowadzony::%{_target}%}
+                    send "&ePuściłeś gracza &a%{_target}%&e." to player
+                    send "&eGracz &a%player% &epuścił Cię." to {_target}
+                    stop
+                    
+                # Jeśli nikt go nie prowadzi -> Zaczynasz go prowadzić
+                else if {jest_prowadzony::%{_target}%} is not set:
+                    set {prowadzi::%player%} to {_target}
+                    set {jest_prowadzony::%{_target}%} to player
+                    send "&aZacząłeś prowadzić gracza &e%{_target}%&a!" to player
+                    send "&cGracz &e%player% &czaczął Cię prowadzić!" to {_target}
+                    stop
+                    
+                else:
+                    send "&cTen gracz jest już prowadzony przez kogoś innego!" to player
+
+# ============================================
+# PĘTLA CIĄGŁEJ TELEPORTACJI (TELEPORT PRZED SIEBIE)
+# ============================================
+every 1 tick:
+    loop all players:
+        if {prowadzi::%loop-player%} is set:
+            set {_target} to {prowadzi::%loop-player%}
+            if {_target} is online:
+                # Wyliczamy pozycję 1.5 bloku przed prowadzącym
+                set {_loc} to location 1.5 blocks in front of loop-player
+                teleport {_target} to {_loc}
+
+# ============================================
+# BLOKADY DLA ZAKUTEGO / PROWADZONEGO GRACZA
+# ============================================
+
+# Brak możliwości ruchu samemu (gdy jest prowadzony)
+on player move:
+    if {jest_prowadzony::%player%} is set:
+        cancel event
+
+# Brak możliwości bicia
+on damage:
+    if attacker is a player:
+        if {skajdanowany::%attacker%} is set:
+            cancel event
+            send "&cJesteś w kajdankach i nie możesz atakować!" to attacker
+
+# Brak możliwości kopania / niszczenia bloków
+on break:
+    if {skajdanowany::%player%} is set:
+        cancel event
+        send "&cJesteś w kajdankach i nie możesz niszczyć bloków!" to player
+
+# Brak możliwości interakcji / używania itemów
+on right click:
+    if {skajdanowany::%player%} is set:
+        cancel event
+
+# Brak możliwości zmiany trzymanego przedmiotu
+on item held change:
+    if {skajdanowany::%player%} is set:
+        cancel event
+
+# Brak możliwości podnoszenia czegokolwiek z ziemi
+on pickup:
+    if {skajdanowany::%player%} is set:
+        cancel event
+
+# Czyszczenie stanów przy wyjściu z serwera
+on quit:
+    if {prowadzi::%player%} is set:
+        set {_t} to {prowadzi::%player%}
+        delete {jest_prowadzony::%{_t}%}
+        delete {prowadzi::%player%}
+    if {jest_prowadzony::%player%} is set:
+        set {_p} to {jest_prowadzony::%player%}
+        delete {prowadzi::%{_p}%}
+        delete {jest_prowadzony::%player%}

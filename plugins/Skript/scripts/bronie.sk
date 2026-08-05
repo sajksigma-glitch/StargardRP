@@ -1,0 +1,167 @@
+# ==========================================
+# KONFIGURACJA BRONI
+# ==========================================
+options:
+    # --- Ustawienia AK-47 ---
+    ak47_item: iron horse armor
+    ak47_name: "&eAK-47"
+    ak47_max_ammo: 30
+    
+    ak47_mag_item: iron nugget
+    ak47_mag_name: "&6Magazynek AK-47"
+
+    # --- Ustawienia Glock 17 ---
+    glock_item: iron horse armor
+    glock_name: "&eGlock 17"
+    glock_max_ammo: 17
+    
+    glock_mag_item: iron nugget
+    glock_mag_name: "&6Magazynek Glock 17"
+
+# ==========================================
+# KOMENDY
+# ==========================================
+command /bron [<text>]:
+    permission: bron.admin
+    permission message: "&cNie masz uprawnień do tej komendy!"
+    trigger:
+        if arg-1 is "ak47":
+            give player 1 of {@ak47_item} named {@ak47_name} with custom model data 1 with lore "&7Amunicja: &f{@ak47_max_ammo}/{@ak47_max_ammo}"
+            send "&aOtrzymałeś AK-47!" to player
+            
+        else if arg-1 is "ak47_mag":
+            give player 1 of {@ak47_mag_item} named {@ak47_mag_name} with custom model data 1
+            send "&aOtrzymałeś magazynek do AK-47!" to player
+            
+        else if arg-1 is "glock17":
+            give player 1 of {@glock_item} named {@glock_name} with custom model data 2 with lore "&7Amunicja: &f{@glock_max_ammo}/{@glock_max_ammo}"
+            send "&aOtrzymałeś Glocka 17!" to player
+            
+        else if arg-1 is "glock17_mag":
+            give player 1 of {@glock_mag_item} named {@glock_mag_name} with custom model data 2
+            send "&aOtrzymałeś magazynek do Glocka 17!" to player
+            
+        else:
+            send "&cUżycie: /bron <ak47 | ak47_mag | glock17 | glock17_mag>" to player
+
+# ==========================================
+# STRZELANIE (Prawy Przycisk Myszki)
+# ==========================================
+on right click:
+    if name of player's tool is {@ak47_name} or {@glock_name}:
+        cancel event
+        
+        # Rozpoznawanie z jakiej broni strzelamy i ustawianie jej statystyk
+        if name of player's tool is {@ak47_name}:
+            set {_weaponType} to "AK47"
+            set {_cooldown} to 0.1 seconds # Szybki ostrzał
+            set {_max_ammo} to {@ak47_max_ammo}
+            set {_sound_radius} to 15 # Dźwięk słyszalny z 15 kratek
+            set {_pitch} to 0.5
+        else if name of player's tool is {@glock_name}:
+            set {_weaponType} to "GLOCK"
+            set {_cooldown} to 0.35 seconds # Wolniejszy ostrzał (pistolet)
+            set {_max_ammo} to {@glock_max_ammo}
+            set {_sound_radius} to 10 # Dźwięk słyszalny z 10 kratek
+            set {_pitch} to 1.2
+            
+        # Sprawdzanie blokady szybkostrzelności (cooldown)
+        if {cooldown::shoot::%player%} is set:
+            if difference between {cooldown::shoot::%player%} and now is less than {_cooldown}:
+                stop
+        set {cooldown::shoot::%player%} to now
+        
+        # Pobieranie ilości amunicji z opisu w sposób uniwersalny (odcina max ammo po ukosniku)
+        set {_lore} to uncolored line 1 of lore of player's tool
+        replace all "Amunicja: " with "" in {_lore}
+        set {_split::*} to {_lore} split at "/"
+        set {_ammo} to {_split::1} parsed as integer
+        
+        if {_ammo} > 0:
+            # Wystrzelenie pocisku i przypisanie mu typu broni w metadanych (do poprawnego liczenia obrażeń)
+            shoot a snowball from player at speed 4
+            set metadata value "bullet_type" of last shot projectile to {_weaponType}
+            
+            # Odtwarzanie dźwięku wystrzału TYLKO dla graczy w odpowiednim promieniu kratek
+            loop players in radius {_sound_radius} around player:
+                play sound "entity.firework_rocket.blast" with volume 1 and pitch {_pitch} at player for loop-player
+            
+            # Odejmuje 1 pocisk i aktualizuje opis na broni
+            remove 1 from {_ammo}
+            set line 1 of lore of player's tool to "&7Amunicja: &f%{_ammo}%/%{_max_ammo}%"
+        else:
+            # Brak amunicji
+            play sound "block.dispenser.fail" with volume 1 and pitch 1 at player for player
+            send "&cZabrakło amunicji! Przeładuj (Lewy Przycisk Myszki)." to player
+
+# ==========================================
+# PRZEŁADOWANIE (Lewy Przycisk Myszki)
+# ==========================================
+on left click:
+    if name of player's tool is {@ak47_name} or {@glock_name}:
+        cancel event
+        
+        # Ustalanie z jakiej broni przeładowujemy
+        set {_weapon_name} to name of player's tool
+        if {_weapon_name} is {@ak47_name}:
+            set {_max_ammo} to {@ak47_max_ammo}
+            set {_mag_name} to {@ak47_mag_name}
+            set {_mag_item} to {@ak47_mag_item}
+            set {_mag_cmd} to 1
+            set {_reload_time} to 2 seconds
+        else if {_weapon_name} is {@glock_name}:
+            set {_max_ammo} to {@glock_max_ammo}
+            set {_mag_name} to {@glock_mag_name}
+            set {_mag_item} to {@glock_mag_item}
+            set {_mag_cmd} to 2
+            set {_reload_time} to 1.5 seconds # Szybsze przeładowywanie pistoletu
+            
+        # Sprawdzanie aktualnej amunicji
+        set {_lore} to uncolored line 1 of lore of player's tool
+        replace all "Amunicja: " with "" in {_lore}
+        set {_split::*} to {_lore} split at "/"
+        set {_ammo} to {_split::1} parsed as integer
+        
+        if {_ammo} is {_max_ammo}:
+            send "&eTwoja broń jest już pełna!" to player
+            stop
+            
+        # Sprawdzanie czy gracz ma odpowiedni magazynek w ekwipunku
+        set {_hasMag} to false
+        loop items in player's inventory:
+            if name of loop-item is {_mag_name}:
+                set {_hasMag} to true
+                stop loop
+                
+        if {_hasMag} is true:
+            if {reloading::%player%} is true:
+                stop
+            set {reloading::%player%} to true
+            
+            send "&ePrzeładowywanie..." to player
+            play sound "item.armor.equip_iron" with volume 1 and pitch 1 at player for player
+            
+            wait {_reload_time}
+            
+            # Zabezpieczenie: czy po czasie przeładowania gracz ma w ręku TĘ SAMĄ broń?
+            if name of player's tool is {_weapon_name}:
+                # Usuwamy magazynek korzystając z jego Custom Model Data
+                remove 1 of {_mag_item} named {_mag_name} with custom model data {_mag_cmd} from player's inventory
+                set line 1 of lore of player's tool to "&7Amunicja: &f%{_max_ammo}%/%{_max_ammo}%"
+                send "&aPrzeładowano broń!" to player
+                play sound "block.iron_door.close" with volume 1 and pitch 2 at player for player
+            
+            delete {reloading::%player%}
+        else:
+            send "&cNie masz odpowiedniego magazynka do tej broni!" to player
+
+# ==========================================
+# OBRAŻENIA OD POCISKU
+# ==========================================
+on damage:
+    if projectile is a snowball:
+        # Odczytywanie typu pocisku z jego "metadanych" nadanych przy wystrzale
+        if metadata value "bullet_type" of projectile is "AK47":
+            set damage to 6 # AK-47: 6 HP (3 całe serduszka)
+        else if metadata value "bullet_type" of projectile is "GLOCK":
+            set damage to 3 # Glock 17: 3 HP (1.5 serduszka)

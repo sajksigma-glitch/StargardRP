@@ -1,0 +1,87 @@
+# W produkcie w polu "krotki opis" mozesz ustawic nazwe itemu z Minecraft, ktory ma sie wyswietlac jako dany produkt.
+
+# ID sklepu z panelu VIshop
+shopId: 0
+
+# ID serwera z panelu VIshop
+serverId: 0
+
+# GUI z produktami
+# x - produkt, # - obramowanie, ! - puste pole, < - poprzednia strona, > - nastepna strona
+# Wlasne znaki mozesz zdefiniowac w sekcji customItems
+productsGui:
+  - "# # # # # # # # #"
+  - "# x x x x x x x #"
+  - "# x x x x x x x #"
+  - "# # # < # > # # #"
+
+# Nazwa GUI z produktami
+productsGuiText: "&0Wybierz produkt"
+
+# GUI z zakupem produktu
+# x - operator platnosci, # - obramowanie, ! - puste pole
+# c/d - zmiana ilosci o maly skok, b/e - sredni skok, a/f - duzy skok, s - aktualna ilosc
+# (przyciski ilosci pokazuja sie tylko dla produktow z wlaczonym sliderem)
+# Wlasne znaki mozesz zdefiniowac w sekcji customItems
+buyGui:
+  - "# # # # # # # # #"
+  - "# x x x x x x x #"
+  - "# a b c s d e f #"
+  - "# # # # # # # # #"
+
+# Nazwa GUI z zakupem produktu
+buyGuiText: "&0Zakup %product_name%"
+
+# Skoki zmiany ilosci w GUI zakupu: [maly (c/d), sredni (b/e), duzy (a/f)]
+sliderSteps: [1, 16, 64]
+
+# Wyglad itemow w GUI
+# https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html
+items:
+  border:
+    material: BLACK_STAINED_GLASS_PANE
+    name: "&r"
+  previousPage:
+    material: RED_STAINED_GLASS_PANE
+    name: "&7Poprzednia strona"
+  nextPage:
+    material: GREEN_STAINED_GLASS_PANE
+    name: "&7Następna strona"
+  payment:
+    material: MAP
+    name: "&f%provider% - %price%"
+  sliderDecrease:
+    material: RED_STAINED_GLASS_PANE
+    name: "&7Zmień o &b-%amount%"
+  sliderIncrease:
+    material: LIME_STAINED_GLASS_PANE
+    name: "&7Zmień o &b+%amount%"
+  sliderDisplay:
+    material: OAK_SIGN
+    name: "&f%slider_name%: %value%"
+
+# Wlasne dekoracyjne itemy, ktorych mozesz uzyc w layoutach productsGui i buyGui
+# Klucz musi byc pojedynczym znakiem i nie moze byc znakiem zarezerwowanym (x # ! < > a b c s d e f)
+# Przyklad:
+# customItems:
+#   i:
+#     material: DIAMOND
+#     name: "&bNasz serwer"
+#     lore:
+#       - "&7Dziękujemy za zakupy!"
+#     amount: 1
+
+# Wiadomosci i formaty tekstu
+messages:
+  priceFormat: "&f%price% zł"
+  promoPriceFormat: "&6%price% zł &7&m%old_price% zł"
+  priceLore: "&7Cena: %price%"
+  pageLore: "&7Przejdź do strony &e%page%&7/&e%pages%"
+  firstPage: "&cTo jest pierwsza strona"
+  lastPage: "&cNie ma więcej stron"
+  clickToPay: "&2Kliknij tutaj, by przejść do płatności."
+  clickToPayHover: "&2Kliknij, by kupić."
+  bookTitle: "Itemshop"
+  bookAuthor: "VIshop"
+  paymentError: "&cWystąpił błąd podczas tworzenia płatności. Spróbuj ponownie później."
+  noPermission: "&cNie masz uprawnień, by otworzyć itemshop."

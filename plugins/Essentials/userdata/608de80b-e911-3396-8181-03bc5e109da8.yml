@@ -1,0 +1,39 @@
+teleportenabled: true
+teleportauto: false
+godmode: false
+flymode: false
+muted: false
+jailed: false
+ip-address: 83.25.177.220
+afk: false
+socialspy: false
+npc: false
+powertoolsenabled: true
+accepting-pay: true
+baltop-exempt: false
+timestamps:
+  lastteleport: 0
+  lastheal: 0
+  mute: 0
+  jail: 0
+  onlinejail: 0
+  logout: 1785922264856
+  login: 1785922266230
+money: '723.0'
+last-account-name: And3x_
+logoutlocation:
+  world: 9bf65e78-4867-4b5d-bbb6-ff0768a1b6cb
+  world-name: world
+  x: -95.99154111879828
+  y: 107.85349847431223
+  z: -11.340743487054443
+  yaw: -90.97479248046875
+  pitch: 35.833282470703125
+lastlocation:
+  world: 9bf65e78-4867-4b5d-bbb6-ff0768a1b6cb
+  world-name: world
+  x: -103.68030144407125
+  y: 115.27555301342859
+  z: 98.47617034961102
+  yaw: 71.42822265625
+  pitch: 27.611249923706055

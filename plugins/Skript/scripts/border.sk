@@ -1,0 +1,39 @@
+options:
+    prefix: &8[&bWorldBorder&8] &7
+    uprawnienie: border.admin
+
+command /setborder [<number>] [<number>] [<number>]:
+    permission: {@uprawnienie}
+    permission message: {@prefix}&cNie masz uprawnień!
+    trigger:
+        # Jeśli nie podano argumentów - instrukcja
+        if arg-1 is not set:
+            send "{@prefix}&7Użycie komend borderu Minecrafta:" to player
+            send "&e/setborder <wielkość> &7- Ustawia kwadratowy border o podanej wielkości wokół Ciebie" to player
+            send "&e/setborder <wielkość> <X> <Z> &7- Ustawia border w konkretnych koordynatach X i Z" to player
+            send "&e/setborder 0 &7- Usuwa / resetuje border (ustawia na max)" to player
+            stop
+
+        # Usuwanie / Reset borderu
+        if arg-1 <= 0:
+            execute console command "worldborder set 60000000"
+            send "{@prefix}&cZresetowano i usunięto granicę świata!" to player
+            stop
+
+        # Ustawienie środka borderu (jeśli podano X i Z, lub w miejscu gracza)
+        if arg-2 is set:
+            if arg-3 is set:
+                set {_x} to arg-2
+                set {_z} to arg-3
+            else:
+                send "{@prefix}&cPodaj oba koordynaty: X oraz Z!" to player
+                stop
+        else:
+            set {_x} to x-coord of player's location
+            set {_z} to z-coord of player's location
+
+        # Wykonanie natywnych komend Minecrafta
+        execute console command "worldborder center %{_x}% %{_z}%"
+        execute console command "worldborder set %arg-1%"
+
+        send "{@prefix}&aUstawiono granicę świata o wielkości &e%arg-1%x%arg-1% &abloków na środku: &eX: %{_x}%, Z: %{_z}%&a!" to player

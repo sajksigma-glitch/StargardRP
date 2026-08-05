@@ -1,0 +1,232 @@
+# ======================================================
+#            SKRYPT NA PRACĘ DOSTAWCE
+# ======================================================
+
+options:
+    zarobek: 25              # Nagroda w $ za wykonaną dostawę
+    kara_zjedzenie: 10 hours # Czas kary za zjedzenie zamówienia
+    kara_czas: 1 hour        # Czas kary za przekroczenie 10 minut
+    prefix: &8[&eDostawca&8] &7
+
+# ------------------------------------------------------
+# 1. KOMENDY ADMINISTRACYJNE
+# ------------------------------------------------------
+command /dostawca-admin [<text>] [<text>]:
+    permission: dostawca.admin
+    permission message: &cNie masz uprawnień do tej komendy!
+    trigger:
+        if arg-1 is "dodajrestauracje":
+            if arg-2 is set:
+                set {dostawca::restauracje::%arg-2%} to location of player
+                send "{@prefix}&aDodano restaurację (punkt odbioru): &e%arg-2%" to player
+            else:
+                send "{@prefix}&cPodaj nazwę restauracji!" to player
+                
+        else if arg-1 is "dodajpunkt":
+            if arg-2 is set:
+                set {dostawca::punkty::%arg-2%} to location of player
+                send "{@prefix}&aDodano klienta (punkt dostawy): &e%arg-2%" to player
+            else:
+                send "{@prefix}&cPodaj nazwę punktu dostawy!" to player
+                
+        else if arg-1 is "dodajjedzenie":
+            if player's tool is not air:
+                add type of player's tool to {dostawca::jedzenie::*}
+                send "{@prefix}&aDodano &e%type of player's tool% &ado puli jedzenia dostaw!" to player
+            else:
+                send "{@prefix}&cMusisz trzymać jedzenie w ręce!" to player
+
+        else if arg-1 is "unban":
+            if arg-2 is set:
+                set {_p} to arg-2 parsed as offlineplayer
+                if {dostawca::kara::%uuid of {_p}%} is set:
+                    delete {dostawca::kara::%uuid of {_p}%}
+                    delete {dostawca::kara_czas_duugosc::%uuid of {_p}%}
+                    send "{@prefix}&aZdjęto blokadę pracy dostawcy dla gracza &e%arg-2%&a." to player
+                else:
+                    send "{@prefix}&cTen gracz nie posiada aktywnej kary!" to player
+            else:
+                send "{@prefix}&cPodaj nick gracza!" to player
+
+        else if arg-1 is "reset":
+            clear {dostawca::punkty::*}
+            clear {dostawca::jedzenie::*}
+            clear {dostawca::restauracje::*}
+            send "{@prefix}&cWyczyszczono całą konfigurację dostawcy!" to player
+        else:
+            send "{@prefix}&7Użycie komend administratora:" to player
+            send "&e/dostawca-admin dodajrestauracje <nazwa>" to player
+            send "&e/dostawca-admin dodajpunkt <nazwa>" to player
+            send "&e/dostawca-admin dodajjedzenie" to player
+            send "&e/dostawca-admin unban <nick>" to player
+            send "&e/dostawca-admin reset" to player
+
+# ------------------------------------------------------
+# 2. FUNKCJA LOSOWANIA NOWEGO ZLECENIA (Musi być wyżej)
+# ------------------------------------------------------
+function losujDostawke(p: player):
+    set {_nazwa_restauracji} to random element out of indices of {dostawca::restauracje::*}
+    set {_nazwa_klienta} to random element out of indices of {dostawca::punkty::*}
+    
+    set {dostawca::restauracja_loc::%uuid of {_p}%} to {dostawca::restauracje::%{_nazwa_restauracji}%}
+    set {dostawca::cel_loc::%uuid of {_p}%} to {dostawca::punkty::%{_nazwa_klienta}%}
+    set {dostawca::jedzenie_item::%uuid of {_p}%} to random element out of {dostawca::jedzenie::*}
+    
+    set {dostawca::status::%uuid of {_p}%} to "ODBIOR"
+    delete {dostawca::czas_start::%uuid of {_p}%}
+
+    send "{@prefix}&aPrzyjęto nowe zlecenie!" to {_p}
+    send "{@prefix}&7KROK 1: Udaj się do restauracji &e%{_nazwa_restauracji}% &7po odbiór zamówienia!" to {_p}
+
+# ------------------------------------------------------
+# 3. SYSTEM GUI PRACY (/PRACA)
+# ------------------------------------------------------
+command /praca:
+    trigger:
+        set {_gui} to chest inventory with 3 rows named "&8&lPraca Dostawcy"
+        
+        # Wypełnienie tła
+        loop 27 times:
+            set slot (loop-number - 1) of {_gui} to gray stained glass pane named " "
+            
+        # Slot 11: Rozpoczęcie
+        set slot 11 of {_gui} to lime concrete named "&a&lZACZNIJ PRACĘ" with lore "&7Kliknij, aby rozpocząć", "&7dobieranie zleceń dostawcy.", "", "&eCiągłe zamówienia do czasu anulowania!"
+        
+        # Slot 15: Anulowanie
+        set slot 15 of {_gui} to red concrete named "&c&lANULUJ PRACĘ" with lore "&7Kliknij, aby zrezygnować", "&7z obecnej pracy/zlecenia."
+        
+        open {_gui} to player
+
+on inventory click:
+    if name of event-inventory is "&8&lPraca Dostawcy":
+        cancel event
+        
+        # --- OPCJA 1: ZACZNIJ PRACĘ ---
+        if index of clicked slot is 11:
+            close player's inventory
+            
+            # Sprawdzanie czy gracz ma bana na pracę
+            if {dostawca::kara::%uuid of player%} is set:
+                set {_roznica} to difference between {dostawca::kara::%uuid of player%} and now
+                set {_max_kara} to {dostawca::kara_czas_duugosc::%uuid of player%}
+                if {_max_kara} is not set:
+                    set {_max_kara} to {@kara_czas}
+                    
+                if {_roznica} < {_max_kara}:
+                    set {_pozostalo} to {_max_kara} - {_roznica}
+                    send "{@prefix}&cPosiadasz blokadę na pracę! Pozostało: &e%{_pozostalo}%" to player
+                    stop
+                else:
+                    delete {dostawca::kara::%uuid of player%}
+                    delete {dostawca::kara_czas_duugosc::%uuid of player%}
+
+            # Sprawdzanie czy już nie pracuje
+            if {dostawca::status::%uuid of player%} is set:
+                send "{@prefix}&cJuż pracujesz! Masz aktywne zlecenie." to player
+                stop
+
+            # Walidacja ustawień
+            if size of {dostawca::jedzenie::*} is 0:
+                send "{@prefix}&cBrak skonfigurowanego jedzenia w systemie." to player
+                stop
+            if size of {dostawca::restauracje::*} is 0:
+                send "{@prefix}&cBrak skonfigurowanych restauracji (punktów odbioru)." to player
+                stop
+            if size of {dostawca::punkty::*} is 0:
+                send "{@prefix}&cBrak skonfigurowanych klientów (punktów dostawy)." to player
+                stop
+
+            # Uruchomienie losowania (Wywołanie funkcji)
+            losujDostawke(player)
+
+        # --- OPCJA 2: ANULUJ PRACĘ ---
+        if index of clicked slot is 15:
+            close player's inventory
+            if {dostawca::status::%uuid of player%} is set:
+                delete {dostawca::status::%uuid of player%}
+                delete {dostawca::restauracja_loc::%uuid of player%}
+                delete {dostawca::cel_loc::%uuid of player%}
+                delete {dostawca::jedzenie_item::%uuid of player%}
+                delete {dostawca::czas_start::%uuid of player%}
+                
+                # Usuwamy jedzenie jeśli miał w ekwipunku
+                loop all items in player's inventory:
+                    if name of loop-item is "&6Zamówienie dla Klienta":
+                        remove loop-item from player's inventory
+                        
+                send "{@prefix}&cZakończono i anulowano pracę dostawcy." to player
+            else:
+                send "{@prefix}&cNie masz aktywnej pracy do anulowania." to player
+
+# ------------------------------------------------------
+# 4. PĘTLA SPRAWDZAJĄCA (Co 1 sekundę)
+# ------------------------------------------------------
+every 1 second:
+    loop all players:
+        # KROK 1: ODBIÓR W RESTAURACJI
+        if {dostawca::status::%uuid of loop-player%} is "ODBIOR":
+            if distance between location of loop-player and {dostawca::restauracja_loc::%uuid of loop-player%} <= 3:
+                set {dostawca::status::%uuid of loop-player%} to "DOSTAWA"
+                set {dostawca::czas_start::%uuid of loop-player%} to now # Start odliczania 10 minut
+                
+                set {_item} to {dostawca::jedzenie_item::%uuid of loop-player%}
+                set {_paczka} to 1 of {_item} named "&6Zamówienie dla Klienta" with lore "&7Dostarcz to do klienta!", "&cMasz 10 minut na dostawę!"
+                give {_paczka} to loop-player
+                
+                set {_loc_klienta} to {dostawca::cel_loc::%uuid of loop-player%}
+                set {_x} to round(x-coord of {_loc_klienta})
+                set {_y} to round(y-coord of {_loc_klienta})
+                set {_z} to round(z-coord of {_loc_klienta})
+                
+                send "{@prefix}&aOdebrano jedzenie z restauracji!" to loop-player
+                send "{@prefix}&7KROK 2: Zanieś zamówienie do klienta w ciągu &e10 minut&7!" to loop-player
+                send "{@prefix}&7Lokalizacja dostawy: &eX: %{_x}%, Y: %{_y}%, Z: %{_z}%" to loop-player
+
+        # KROK 2: DOSTARCZENIE DO KLIENTA
+        else if {dostawca::status::%uuid of loop-player%} is "DOSTAWA":
+            # Weryfikacja przekroczenia czasu 10 minut
+            if difference between {dostawca::czas_start::%uuid of loop-player%} and now > 10 minutes:
+                set {dostawca::kara::%uuid of loop-player%} to now
+                set {dostawca::kara_czas_duugosc::%uuid of loop-player%} to {@kara_czas}
+                
+                delete {dostawca::status::%uuid of loop-player%}
+                delete {dostawca::restauracja_loc::%uuid of loop-player%}
+                delete {dostawca::cel_loc::%uuid of loop-player%}
+                delete {dostawca::jedzenie_item::%uuid of loop-player%}
+                delete {dostawca::czas_start::%uuid of loop-player%}
+                
+                loop all items in loop-player's inventory:
+                    if name of loop-item is "&6Zamówienie dla Klienta":
+                        remove loop-item from loop-player's inventory
+                
+                send "{@prefix}&cPrzekroczyłeś limit czasowy (10 minut) na dostarczenie zamówienia!" to loop-player
+                send "{@prefix}&cOtrzymujesz zakaz pracy na &e1 godzinę&c!" to loop-player
+                continue
+
+            # Sprawdzanie odległości od klienta
+            if distance between location of loop-player and {dostawca::cel_loc::%uuid of loop-player%} <= 3:
+                if name of loop-player's held item is "&6Zamówienie dla Klienta":
+                    remove 1 of loop-player's held item from loop-player's inventory
+                    add {@zarobek} to loop-player's balance
+                    send "{@prefix}&aPomyślnie dostarczono zamówienie! Otrzymujesz &e{@zarobek}$" to loop-player
+                    
+                    # Od razu losuje kolejne zlecenie (Wywołanie funkcji)
+                    send "{@prefix}&eWyszukiwanie kolejnego zamówienia..." to loop-player
+                    losujDostawke(loop-player)
+
+# ------------------------------------------------------
+# 5. KARA ZA ZJEDZENIE
+# ------------------------------------------------------
+on consume:
+    if name of event-item is "&6Zamówienie dla Klienta":
+        set {dostawca::kara::%uuid of player%} to now
+        set {dostawca::kara_czas_duugosc::%uuid of player%} to {@kara_zjedzenie}
+        
+        delete {dostawca::status::%uuid of player%}
+        delete {dostawca::restauracja_loc::%uuid of player%}
+        delete {dostawca::cel_loc::%uuid of player%}
+        delete {dostawca::jedzenie_item::%uuid of player%}
+        delete {dostawca::czas_start::%uuid of player%}
+        
+        send "{@prefix}&cZjadłeś zamówienie przeznaczone dla klienta!" to player
+        send "{@prefix}&cZostałeś zwolniony dyscyplinarnie i nie możesz pracować przez &e10 godzin&c!" to player

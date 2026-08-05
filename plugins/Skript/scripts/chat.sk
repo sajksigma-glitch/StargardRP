@@ -1,0 +1,43 @@
+# ==========================================================
+# SKRYPT NA CZAT LOKALNY I GLOBALNY
+# Permisja dla administracji: chat.global
+# Komendy: /globalchat (lub /gchat) oraz /lokalny (lub /lchat)
+# ==========================================================
+
+# 1. Przechwytywanie wiadomości gracza
+on chat:
+    cancel event
+
+    # Jeśli gracz ma włączony tryb globalny
+    if {chat::global::%player%} is true:
+        send "&7[&cG&7] &f%player's displayname%&7: &f%message%" to all players
+        stop
+    
+    # Szukanie odbiorców w promieniu 40 bloków
+    set {_recipients::*} to players in radius 40 of player
+    
+    # Logika sprawdzania, czy ktoś słyszy wiadomość
+    # W promieniu zawsze znajduje się sam piszący gracz, więc słuchaczy musi być > 1
+    if size of {_recipients::*} is 1:
+        send "&7[&bL&7] &f%player's displayname%&7: &f%message%" to player
+        send "&c&oNikt Cię nie słyszy..." to player
+    else:
+        send "&7[&eLokalny&7] &f%player's displayname%&7: &f%message%" to {_recipients::*}
+
+# 2. Komenda do włączania czatu globalnego
+command /globalchat:
+    aliases: /gchat
+    permission: chat.global
+    permission message: &cBrak uprawnień do korzystania z czatu globalnego.
+    trigger:
+        set {chat::global::%player%} to true
+        send "&aPrzełączono na czat &cGLOBALNY&a. Twoje wiadomości będą widoczne dla wszystkich." to player
+
+# 3. Komenda do powrotu do czatu lokalnego
+command /lokalny:
+    aliases: /lchat
+    permission: chat.global
+    permission message: &cBrak uprawnień.
+    trigger:
+        delete {chat::global::%player%}
+        send "&aPrzełączono na czat &eLOKALNY &a(promień 40 bloków)." to player

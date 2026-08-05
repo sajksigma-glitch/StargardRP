@@ -1,0 +1,150 @@
+# ----------------------------------------------------
+# 1. BLOKADY ZWYKŁYCH ITEMÓW
+# ----------------------------------------------------
+
+on place of sweet berry bush or sweet berries:
+    cancel event
+    send "&cNie możesz stawiać słodkich jagód!" to player
+
+on consume of sweet berries:
+    cancel event
+    send "&cNie możesz jeść tych jagód!" to player
+
+on right click on sweet berry bush:
+    cancel event
+
+# ----------------------------------------------------
+# 2. KOMENDA /MARICHUANA
+# ----------------------------------------------------
+
+command /marichuana [<text>]:
+    permission: op
+    trigger:
+        if arg-1 is "nasiono":
+            give 1 of wheat seeds named "&a&lNasiono Marihuany" with custom model data 1 to player
+            send "&aOtrzymałeś nasiono marihuany!" to player
+        else if arg-1 is "marihuana":
+            give 1 of honeycomb named "&d&lMarihuana" with custom model data 1 to player
+            send "&aOtrzymałeś marihuanę!" to player
+        else if arg-1 is "papieros":
+            give 1 of golden apple named "&a&lPapieros" with custom model data 1 to player
+            send "&aOtrzymałeś papierosa!" to player
+        else:
+            send "&cUżycie: /marichuana <nasiono|marihuana|papieros>" to player
+
+# ----------------------------------------------------
+# 3. SADZENIE KRZAKA (PPM)
+# ----------------------------------------------------
+
+on right click:
+    if clicked block is grass block, dirt, coarse dirt, podzol or farmland:
+        if player's tool is wheat seeds:
+            if uncoloured name of player's tool contains "Nasiono Marihuany":
+                cancel event
+                
+                set {_target} to block above clicked block
+                if {_target} is air:
+                    set {_loc} to location of {_target}
+                    
+                    # Stawianie krzaka w stadium 0
+                    set block at {_target} to "minecraft:sweet_berry_bush[age=0]" parsed as block data
+                    
+                    # Rejestracja w pamięci
+                    set {krzaki::%{_loc}%} to {_loc}
+                    set {krzaki_age::%{_loc}%} to 0
+                    
+                    # Zabieranie 1 nasiona z ręki
+                    if player's gamemode is not creative:
+                        set {_amt} to item amount of player's tool
+                        if {_amt} > 1:
+                            set item amount of player's tool to ({_amt} - 1)
+                        else:
+                            set player's tool to air
+                    
+                    send "&eZasadziłeś nasiono marihuany! Wyrośnie w pełni za 9 minut." to player
+
+# ----------------------------------------------------
+# AUTOMATYCZNY WZROST (CO 3 MINUTY)
+# ----------------------------------------------------
+
+every 3 minutes:
+    loop {krzaki::*}:
+        set {_loc} to loop-value
+        
+        # Jeśli krzak został zniszczony, usuwamy go z pamięci
+        if block at {_loc} is not sweet berry bush:
+            delete {krzaki::%loop-index%}
+            delete {krzaki_age::%loop-index%}
+        else:
+            set {_age} to {krzaki_age::%{_loc}%}
+            if {_age} is not set:
+                set {_age} to 0
+            
+            # Podnoszenie fazy wzrostu o 1
+            if {_age} < 3:
+                add 1 to {_age}
+                set {krzaki_age::%{_loc}%} to {_age}
+                set block at {_loc} to "minecraft:sweet_berry_bush[age=%{_age}%]" parsed as block data
+
+# ----------------------------------------------------
+# 4. ZBIÓR NOŻYCZKAMI (LMB)
+# ----------------------------------------------------
+
+on left click on sweet berry bush:
+    cancel event
+    set {_loc} to location of event-block
+    
+    if player's tool is shears:
+        set {_age} to {krzaki_age::%{_loc}%}
+        
+        if {_age} is not set:
+            set {_data} to "%block data of event-block%"
+            if {_data} contains "age=3" or "age:3":
+                set {_age} to 3
+        
+        if {_age} is 3:
+            set event-block to air
+            delete {krzaki::%{_loc}%}
+            delete {krzaki_age::%{_loc}%}
+            
+            # Losowanie ilości marihuany
+            set {_chance} to random integer between 1 and 100
+            if {_chance} <= 40:
+                set {_amount} to 2
+            else if {_chance} <= 70:
+                set {_amount} to 3
+            else if {_chance} <= 88:
+                set {_amount} to 4
+            else if {_chance} <= 97:
+                set {_amount} to 5
+            else:
+                set {_amount} to 6
+            
+            drop {_amount} of honeycomb named "&d&lMarihuana" with custom model data 1 at {_loc}
+            send "&aZebrałeś marihuanę! (&e%{_amount}% szt.&a)" to player
+        else:
+            set {_current} to {_age} ? 0
+            send "&cKrzak jeszcze rośnie! (Stan: %{_current}%/3)" to player
+    else:
+        send "&cMusisz użyć nożyczek, aby zebrać marihuanę!" to player
+
+on break of sweet berry bush:
+    set {_loc} to location of event-block
+    delete {krzaki::%{_loc}%}
+    delete {krzaki_age::%{_loc}%}
+
+# ----------------------------------------------------
+# 5. JEDZENIE PAPIEROSA
+# ----------------------------------------------------
+
+on consume of golden apple:
+    if uncoloured name of player's tool contains "Papieros":
+        wait 1 tick
+        remove absorption from player
+        remove regeneration from player
+        
+        apply potion of nausea 1 to player for 100 seconds
+        apply potion of weakness 1 to player for 100 seconds
+        apply potion of resistance 3 to player for 100 seconds
+        
+        send "&7Zapaliłeś papierosa..." to player
